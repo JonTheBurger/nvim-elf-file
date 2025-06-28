@@ -46,6 +46,8 @@ lint: ## Runs static analysis tools
 	@stylua lua plugin tests --color always --check
 	@printf '${BLU}=== luacheck ===${RST}\n'
 	@luacheck lua plugin tests
+	@printf '${BLU}=== llscheck ===${RST}\n'
+	@VIMRUNTIME="`nvim --clean --headless --cmd 'lua io.write(os.getenv("VIMRUNTIME"))' --cmd 'quit'`" llscheck .
 
 docs: ## Build the documentation
 	@printf '${BLU}=== documentation ===${RST}\n'

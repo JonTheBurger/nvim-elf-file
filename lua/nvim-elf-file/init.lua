@@ -10,6 +10,11 @@ local config = {
 ---@class MyModule
 local M = {}
 
+M.logger = require("plenary.log").new({
+  plugin = "nvim-elf-file",
+  level = "info",
+})
+
 ---@type Config
 M.config = config
 
@@ -21,6 +26,7 @@ M.setup = function(args)
 end
 
 M.hello = function()
+  print("Hello There")
   return module.my_first_function(M.config.opt)
 end
 
