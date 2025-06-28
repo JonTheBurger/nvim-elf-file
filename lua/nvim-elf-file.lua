@@ -1,5 +1,5 @@
 -- main module file
-local module = require("plugin_name.module")
+local module = require("nvim-elf-file.module")
 
 ---@class Config
 ---@field opt string Your config option

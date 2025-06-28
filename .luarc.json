@@ -1,0 +1,12 @@
+{
+    "diagnostics.libraryFiles": "Disable",
+    "runtime.version": "LuaJIT",
+    "workspace.checkThirdParty": "Disable",
+    "workspace.ignoreDir": [
+        ".cache"
+    ],
+    "workspace.library": [
+        "$PWD/.cache/plenary/lua",
+        "$VIMRUNTIME/lua"
+    ]
+}

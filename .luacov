@@ -1,0 +1,11 @@
+statsfile = ".cache/luacov.stats"
+reportfile = ".cache/luacov.report"
+include = "lua/"
+exclude = {
+  ".cache/",
+  "spec/",
+  "tests/",
+  "vim/",
+}
+reporter = "html"
+reportfile = ".cache/luacov.report.html"

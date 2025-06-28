@@ -1,11 +1,52 @@
-TESTS_INIT=tests/minimal_init.lua
-TESTS_DIR=tests/
+#==============================================================================#
+# Project
+#==============================================================================#
+.DEFAULT_GOAL := help
+.PHONY: ${MAKECMDGOALS}
+RED := \033[1;31m
+BLU := \033[36m
+RST := \033[0m
 
-.PHONY: test
+#==============================================================================#
+# Goals
+#==============================================================================#
+help: ## Shows this message
+	@printf '${RED}Usage:\n  ${RST}${BLU}make [<VARIABLE>=<value>] <goal>\n${RST}'
+	@printf '${RED}Targets:\n${RST}'
+	@cat ${MAKEFILE_LIST} | awk -F'(:|##|])\\s*' '/[^:]*:[^:]+##\s.*$$/ {printf "  ${BLU}%-18s${RST} %s\n", $$1, $$3}'
+	@printf '${RED}Variables:\n${RST}'
+	@cat ${MAKEFILE_LIST} | awk -F'(:|##|])\\s*' '/##\s*[A-Z_]+:.*$$/ {printf "  ${BLU}%-18s ${RED}%s]${RST} %s\n", $$2, $$3, $$4}'
 
-test:
+clean: ## Deletes the build dir
+	rm -rf .cache
+
+distclean: ## Resets the repo back to its state at checkout
+	git clean -xdff
+
+check: fmt lint test cov ## Runs quality assurance steps
+
+test: ## Runs tests
+	@printf '${BLU}=== testing ===${RST}\n'
 	@nvim \
 		--headless \
 		--noplugin \
-		-u ${TESTS_INIT} \
-		-c "PlenaryBustedDirectory ${TESTS_DIR} { minimal_init = '${TESTS_INIT}' }"
+		-u tests/minimal_init.lua \
+		-c "PlenaryBustedDirectory tests { minimal_init = 'tests/minimal_init.lua' }"
+
+cov: ## Generates test coverage
+	@printf '${BLU}=== coverage ===${RST}\n'
+	@luacov
+
+fmt: ## Reformats code
+	@printf '${BLU}=== formatting ===${RST}\n'
+	@stylua lua plugin tests
+
+lint: ## Runs static analysis tools
+	@printf '${BLU}=== stylua ===${RST}\n'
+	@stylua lua plugin tests --color always --check
+	@printf '${BLU}=== luacheck ===${RST}\n'
+	@luacheck lua plugin tests
+
+docs: ## Build the documentation
+	@printf '${BLU}=== documentation ===${RST}\n'
+	@panvimdoc --project-name vim-elf-file --input-file README.md

@@ -1,11 +1,22 @@
-local plenary_dir = os.getenv("PLENARY_DIR") or "/tmp/plenary.nvim"
-local is_not_a_directory = vim.fn.isdirectory(plenary_dir) == 0
-if is_not_a_directory then
-  vim.fn.system({"git", "clone", "https://github.com/nvim-lua/plenary.nvim", plenary_dir})
+local deps = {
+  plenary = "https://github.com/nvim-lua/plenary.nvim",
+}
+
+for dep, repo in pairs(deps) do
+  local dir = ".cache/" .. dep
+  local is_not_a_directory = vim.fn.isdirectory(dir) == 0
+  if is_not_a_directory then
+    print("Cloning " .. repo)
+    vim.fn.system({ "git", "clone", repo, dir })
+  end
+  vim.opt.rtp:append(dir)
 end
 
 vim.opt.rtp:append(".")
-vim.opt.rtp:append(plenary_dir)
 
 vim.cmd("runtime plugin/plenary.vim")
+if not pcall(require("luacov")) then
+  print("Could not require('luacov'); disabling coverage")
+end
+require("nvim-elf-file")
 require("plenary.busted")
