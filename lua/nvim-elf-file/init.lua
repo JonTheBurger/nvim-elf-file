@@ -1,33 +1,6 @@
--- main module file
-local module = require("nvim-elf-file.module")
-
----@class Config
----@field opt string Your config option
-local config = {
-  opt = "Hello!",
-}
-
----@class MyModule
 local M = {}
 
-M.logger = require("plenary.log").new({
-  plugin = "nvim-elf-file",
-  level = "info",
-})
-
----@type Config
-M.config = config
-
----@param args Config?
--- you can define your setup function here. Usually configurations can be merged, accepting outside params and
--- you can also put some validation here for those.
-M.setup = function(args)
-  M.config = vim.tbl_deep_extend("force", M.config, args or {})
-end
-
-M.hello = function()
-  print("Hello There")
-  return module.my_first_function(M.config.opt)
-end
+M.setup = require("nvim-elf-file.config").setup
+M.toggle = require("nvim-elf-file.elf").toggle
 
 return M
