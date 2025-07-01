@@ -7,7 +7,7 @@ M.defaults = {
 }
 
 ---@type nvim-elf-file.Options
-M.options = {}
+-- M.options = {}
 
 ---
 ---@param opts nvim-elf-file.Options: plugin options

@@ -5,6 +5,16 @@
 ---@field readelf string|fun(): string
 ---@field log_level string
 
+---@class nvim-elf-file.Section
+---@field id integer Section number
+---@field name string Name of the section
+---@field kind string Section type, such as PROGBITS or STRTAB
+
+---@class nvim-elf-file.Symbol
+---@field start integer Start address of symbol
+---@field stop integer Stop address of symbol
+---@field kind string Symbol kind, such as FUNC
+
 ---@class nvim-elf-file.BufferState
 ---Previous state of a buffer
 ---@field binary boolean

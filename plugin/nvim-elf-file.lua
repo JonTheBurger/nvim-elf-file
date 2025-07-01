@@ -5,7 +5,7 @@ if not vim.g.loaded_nvim_elf_file then
       bin = "bin",
       elf = "elf",
       out = "elf",
-    }
+    },
   })
 
   vim.api.nvim_create_user_command("ElfFile", function(opts)
@@ -14,11 +14,13 @@ if not vim.g.loaded_nvim_elf_file then
       require("nvim-elf-file.elf").toggle_elf()
     elseif sub == "toggle_bin" then
       require("nvim-elf-file.elf").toggle_bin()
+    elseif sub == "dump" then
+      require("nvim-elf-file.elf").dump()
     end
   end, {
     nargs = "+",
-    complete = function(arg_lead, cmd_line, cursor_pos)
-      return { "toggle_elf", "toggle_bin" }
+    complete = function() -- arg_lead, cmd_line, cursor_pos
+      return { "toggle_elf", "toggle_bin", "dump" }
     end,
   })
 
@@ -36,9 +38,9 @@ if not vim.g.loaded_nvim_elf_file then
   )
   vim.keymap.set(
     "n",
-    "<Plug>(nvim-elf-file-disassemble)",
-    require("nvim-elf-file.elf").disassemble,
-    { noremap = true, desc = "Disassemble" }
+    "<Plug>(nvim-elf-file-dump)",
+    require("nvim-elf-file.elf").dump,
+    { noremap = true, desc = "Dump section/symbol/file under cursor" }
   )
 end
 

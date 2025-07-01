@@ -2,7 +2,7 @@ local M = {}
 
 M.log = require("plenary.log").new({
   plugin = "nvim-elf-file",
-  level = "trace",
+  level = "info",
   use_console = false,
   use_file = true,
   file_levels = true,
@@ -18,6 +18,22 @@ M.find_char = function(str, char, idx)
   idx = idx or 1
   for i = idx, #str, 1 do
     if str:byte(i) == ascii then
+      return i
+    end
+  end
+  return nil
+end
+
+---Finds the index of the first ascii character in a string not matching char
+---@param str string to search
+---@param char string character to skip
+---@param idx? integer start index; defaults to 1
+---@return integer? index of char, or nil if not found
+M.skip_char = function(str, char, idx)
+  local ascii = char:byte(1)
+  idx = idx or 1
+  for i = idx, #str, 1 do
+    if str:byte(i) ~= ascii then
       return i
     end
   end

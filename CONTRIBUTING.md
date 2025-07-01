@@ -9,8 +9,6 @@
 ```
 
 ## Roadmap
-- readelf --wide -p .strtab a.out
-- readelf --wide -x .data a.out
 - file header to arm-
 - config
 
