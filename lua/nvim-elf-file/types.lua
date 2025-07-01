@@ -11,4 +11,12 @@
 ---@field modifiable boolean
 ---@field modified boolean
 ---@field readonly boolean
----@field file? string
+---@field filetype string
+
+---@class nvim-elf-file.BufferOpts
+---Records if a buffer has been readelf'd etc. is_<x>_on variables are used to
+---determine if it's in a "virtual" file mode like readelf mode. Note that many
+---vim functions clear vim.b, such as vim.fn.edit. To account for cases where
+---is_<x>_on is set to nil, a nil value is treated as a no-op by the toggle
+---functions.
+---@field buf_state? nvim-elf-file.BufferState Previous state of the buffer.

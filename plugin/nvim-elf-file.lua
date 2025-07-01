@@ -2,33 +2,43 @@ if not vim.g.loaded_nvim_elf_file then
   vim.filetype.add({
     extension = {
       axf = "elf",
+      bin = "bin",
       elf = "elf",
-    },
-    filename = {
-      ["a.out"] = "elf",
-    },
+      out = "elf",
+    }
   })
 
   vim.api.nvim_create_user_command("ElfFile", function(opts)
     local sub = opts.fargs[1]
-    if sub == "toggle" then
-      require("nvim-elf-file.elf").toggle()
-    elseif sub == "is_elf" then
-      local is_elf = require("nvim-elf-file.elf").is_elf_file()
-      vim.notify(vim.fn.expand("%") .. (is_elf and " is an ELF file" or " is not an ELF file"))
+    if sub == "toggle_elf" then
+      require("nvim-elf-file.elf").toggle_elf()
+    elseif sub == "toggle_bin" then
+      require("nvim-elf-file.elf").toggle_bin()
     end
   end, {
     nargs = "+",
     complete = function(arg_lead, cmd_line, cursor_pos)
-      return { "toggle", "is_elf" }
+      return { "toggle_elf", "toggle_bin" }
     end,
   })
 
   vim.keymap.set(
     "n",
-    "<Plug>(nvim-elf-file-toggle)",
-    require("nvim-elf-file.elf").toggle,
+    "<Plug>(nvim-elf-file-toggle-elf)",
+    require("nvim-elf-file.elf").toggle_elf,
     { noremap = true, desc = "Toggle readelf display" }
+  )
+  vim.keymap.set(
+    "n",
+    "<Plug>(nvim-elf-file-toggle-bin)",
+    require("nvim-elf-file.elf").toggle_bin,
+    { noremap = true, desc = "Toggle xxd binary display" }
+  )
+  vim.keymap.set(
+    "n",
+    "<Plug>(nvim-elf-file-disassemble)",
+    require("nvim-elf-file.elf").disassemble,
+    { noremap = true, desc = "Disassemble" }
   )
 end
 
