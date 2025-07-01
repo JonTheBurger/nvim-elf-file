@@ -1,5 +1,6 @@
 local M = {}
 
+---All ELF files start with this sequence of bytes
 M.MAGIC = "\x7fELF"
 
 ---Checks if a file is an ELF file by searching for magic bytes at file start.
@@ -29,17 +30,20 @@ M.is_elf_file = function(file)
   return is_elf
 end
 
-M.disassemble = function()
-  local util = require("nvim-elf-file.util")
-  local word = vim.fn.expand("<cWORD>")
+---Checks if a readelf line refers to a section
+---@param line string Line of readelf output
+---@return boolean True if the line contains a section
+M.is_section_line = function(line)
+  return line:match("^ *%[ *%d%]") ~= nil
+end
 
-  if vim.fn.filereadable(word) == 1 then
-    -- Edit files like normal
-    vim.cmd.edit(word)
-  else
+M.parse_section = function(line)
+end
+
+M.parse_symbol = function(line)
+    local util = require("nvim-elf-file.util")
     -- Else read the line, for example:
     -- "    29: 00000000000011c9    72 FUNC    GLOBAL DEFAULT   16 main"
-    local line = vim.fn.getline(".")
     util.log.debug("Parsing " .. line)
 
     -- Find:
@@ -93,16 +97,17 @@ M.disassemble = function()
     local kind = line:sub(0, kind_col - 1)
 
     -- Check if command is valid
-    if kind ~= "FUNC" then
+
+    if stop == start then
+      vim.notify("Cannot disassemble empty symbol " .. word)
+      util.log.info("Cannot disassemble empty symbol " .. word)
       return
     end
 
-    if stop == start then
-      vim.notify("Cannot disassemble empty function " .. word)
-      util.log.info("Cannot disassemble empty function " .. word)
-      return
+    local cmd = "objdump --wide --demangle --full-contents --start-address " .. start .. " --stop-address " .. stop .. " " .. vim.fn.expand("%")
+    if kind == "FUNC" then
+      cmd = "objdump --wide --demangle --source --start-address " .. start .. " --stop-address " .. stop .. " " .. vim.fn.expand("%")
     end
-    local cmd = "objdump -C -S --start-address " .. start .. " --stop-address " .. stop .. " " .. vim.fn.expand("%")
     util.log.info(cmd)
 
     -- Open Disassembly
@@ -112,6 +117,23 @@ M.disassemble = function()
     vim.bo.modifiable = false
     vim.bo.modified = false
     vim.bo.swapfile = false
+end
+
+---Disassembles the function under cursor in a new temporary buffer
+M.disassemble = function()
+  local word = vim.fn.expand("<cWORD>")
+
+  if vim.fn.filereadable(word) == 1 then
+    -- Edit files like normal
+    vim.cmd.edit(word)
+  else
+    local line = vim.fn.getline(".")
+
+    if M.is_section_line(line) then
+      M.parse_section(line)
+    else
+      M.parse_symbol(line)
+    end
   end
 end
 
@@ -138,8 +160,9 @@ M._toggle = function(cmd, ft, callback)
     util.log.info(cmd)
     vim.cmd("%!" .. cmd)
 
-    -- Set modified to false (even though we just replaced buffer contents)
+    -- Set modified to false (because we just replaced (edited) buffer contents)
     vim.bo.modified = false
+    vim.bo.swapfile = false
     vim.bo.modifiable = false
     vim.bo.readonly = true
 
@@ -154,9 +177,11 @@ M._toggle = function(cmd, ft, callback)
   elseif vim.b.nvim_elf_file[key] == true then
     util.log.trace("toggle " .. key .. " was true")
 
+    -- Save buf_state as vim.cmd.edit will wipe out vim.b
     local buf_state = vim.b.nvim_elf_file.buf_state
     vim.b.nvim_elf_file = { [key] = nil }
 
+    -- Re-invokes this function, so we set [key] to nil first to no-op the run
     vim.cmd.edit("%")
 
     util.set_buf_state(buf_state or {})
@@ -169,13 +194,15 @@ M._toggle = function(cmd, ft, callback)
   end
 end
 
+---Dumps ELF file symbol table in the current buffer, or restores the ELF file.
 M.toggle_elf = function()
-  local cmd = "readelf -W -C -s " .. vim.fn.expand("%")
+  local cmd = "readelf --wide --demangle --section-headers --syms " .. vim.fn.expand("%")
   M._toggle(cmd, "elf", function()
     vim.keymap.set("n", "<cr>", M.disassemble, { buffer = true, desc = "Disassemble" })
   end)
 end
 
+---Dumps bin as hex in the current buffer, or restores the bin file.
 M.toggle_bin = function()
   M._toggle("xxd", "bin")
 end
