@@ -16,10 +16,14 @@
 ---@field kind string Section type, such as PROGBITS or STRTAB
 
 ---@class nvim-elf-file.Symbol
----@field name string Name of symbol
+---@field id integer Symbol ID
 ---@field start integer Start address of symbol
 ---@field stop integer Stop address of symbol
----@field kind string Symbol kind, such as FUNC
+---@field kind string Symbol kind, such as FUNC, OBJECT, FILE, SECTION
+---@field bind string Symbol bind, such as LOCAL, GLOBAL, or WEAK
+---@field visibility string Symbol visibility, such as DEFAULT, HIDDEN, or PROTECTED
+---@field section_idx integer|string Which section id the symbol belongs to, or UND/ABS/COMMON
+---@field name string Name of symbol
 
 ---@class nvim-elf-file.BufferState
 ---Previous state of a buffer

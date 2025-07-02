@@ -9,45 +9,6 @@ M.log = require("plenary.log").new({
   file_levels = true,
 })
 
----Finds the index of an ascii character in a string
----@param str string to search
----@param char string character to search for
----@param idx? integer start index; defaults to 1
----@return integer? index of char, or nil if not found
-M.find_char = function(str, char, idx)
-  local ascii = char:byte(1)
-  idx = idx or 1
-  for i = idx, #str, 1 do
-    if str:byte(i) == ascii then
-      return i
-    end
-  end
-  return nil
-end
-
----Finds the index of the first ascii character in a string not matching char
----@param str string to search
----@param char string character to skip
----@param idx? integer start index; defaults to 1
----@return integer? index of char, or nil if not found
-M.skip_char = function(str, char, idx)
-  local ascii = char:byte(1)
-  idx = idx or 1
-  for i = idx, #str, 1 do
-    if str:byte(i) ~= ascii then
-      return i
-    end
-  end
-  return nil
-end
-
----Remove surrounding whitespace from a string
----@param str string Original string
----@return string string with surrounding whitespace removed
-M.trim = function(str)
-  return str:match("^%s*(.-)%s*$")
-end
-
 ---Gets the restorable state of the current buffer
 ---@return nvim-elf-file.BufferState
 M.get_buf_state = function()
@@ -76,15 +37,17 @@ end
 ---@param callback fun(integer) Function to call upon completion; buf passed in.
 M.buf_from_cmd_async = function(buf, cmd, args, callback)
   --First wipe the buffer
-  vim.api.nvim_set_option_value("readonly", false, { buf = buf })
-  vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
+  vim.bo[buf].readonly = false
+  vim.bo[buf].modifiable = true
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, {})
-  vim.api.nvim_set_option_value("readonly", true, { buf = buf })
-  vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
-  vim.api.nvim_set_option_value("modified", false, { buf = buf })
+  vim.bo[buf].readonly = true
+  vim.bo[buf].modifiable = false
+  vim.bo[buf].modified = false
 
+  ---@diagnostic disable-next-line: undefined-field
   local pipe = vim.loop.new_pipe()
 
+  ---@diagnostic disable-next-line: undefined-field
   vim.loop.spawn(cmd, {
     args = args,
     stdio = { nil, pipe, nil },
@@ -102,14 +65,14 @@ M.buf_from_cmd_async = function(buf, cmd, args, callback)
     assert(not err, err)
     if data then
       vim.schedule(function()
-        vim.api.nvim_set_option_value("readonly", false, { buf = buf })
-        vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
+        vim.bo[buf].readonly = false
+        vim.bo[buf].modifiable = true
         for line in data:gmatch("[^\r\n]+") do
           vim.api.nvim_buf_set_lines(buf, -1, -1, false, { line })
         end
-        vim.api.nvim_set_option_value("readonly", true, { buf = buf })
-        vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
-        vim.api.nvim_set_option_value("modified", false, { buf = buf })
+        vim.bo[buf].readonly = true
+        vim.bo[buf].modifiable = false
+        vim.bo[buf].modified = false
       end)
     end
   end)

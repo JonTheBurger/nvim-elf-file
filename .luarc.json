@@ -1,12 +1,14 @@
 {
-    "diagnostics.libraryFiles": "Disable",
-    "runtime.version": "LuaJIT",
-    "workspace.checkThirdParty": "Disable",
-    "workspace.ignoreDir": [
-        ".cache"
-    ],
-    "workspace.library": [
-        "$PWD/.cache/plenary/lua",
-        "$VIMRUNTIME/lua"
-    ]
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "diagnostics.libraryFiles": "Disable",
+  "runtime.version": "LuaJIT",
+  "workspace.checkThirdParty": "Disable",
+  "workspace.ignoreDir": [
+    ".cache",
+    ".luarocks"
+  ],
+  "workspace.library": [
+    "$PWD/.cache/plenary/lua",
+    "$VIMRUNTIME/lua"
+  ]
 }

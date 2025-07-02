@@ -9,9 +9,10 @@
 ```
 
 ## Roadmap
-- lookup symbol name, fixup parsing
+- tests
 - config
 - docs
+- ci
 - toggle anything as bin
 - set cursor position as byte index
 

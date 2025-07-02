@@ -78,6 +78,8 @@ M.parse_header = function(text)
     util.log.trace("Couldn't parse header fields")
     return nil
   end
+
+  util.log.debug(vim.inspect(header))
   return header
 end
 
@@ -87,46 +89,37 @@ end
 ---@return nvim-elf-file.Section? or nil on error
 M.parse_section = function(line)
   local util = require("nvim-elf-file.util")
+  local section = {}
+  local _
 
-  -- Find: "[16]"
-  local start_col = util.find_char(line, "[")
-  local end_col = util.find_char(line, "]")
-  util.log.trace(tostring(start_col) .. " " .. tostring(end_col))
-  if start_col == nil or end_col == nil then
-    util.log.trace("Couldn't find section id")
+  -- "  [16] .text             PROGBITS        00000000000010e0 0010e0 000177 00  AX  0   0 16"
+  local ok, col, field = line:find("^%s*%[%s*(%d+)%]%s*")
+  if ok == nil then
+    util.log.info("Couldn't find section id")
     return nil
   end
-  local id = tonumber(line:sub(start_col + 1, end_col - 1))
+  section.id = tonumber(field)
 
-  -- Find: ".text"
-  line = line:sub(end_col + 1)
-  start_col = util.skip_char(line, " ")
-  if start_col == nil or end_col == nil then
-    util.log.trace("Couldn't find section name start")
+  line = line:sub(col + 1)
+  -- ".text             PROGBITS        00000000000010e0 0010e0 000177 00  AX  0   0 16"
+  ok, col, field = line:find("^(%S+)%s*")
+  if ok == nil then
+    util.log.info("Couldn't find section name")
     return nil
   end
-  end_col = util.find_char(line, " ", start_col)
-  if start_col == nil or end_col == nil then
-    util.log.trace("Couldn't find section name end")
-    return nil
-  end
-  local name = line:sub(start_col, end_col - 1)
+  section.name = field
 
-  -- Find: "PROGBITS"
-  line = line:sub(end_col + 1)
-  start_col = util.skip_char(line, " ")
-  if start_col == nil or end_col == nil then
-    util.log.trace("Couldn't find section name start")
+  line = line:sub(col + 1)
+  -- "PROGBITS        00000000000010e0 0010e0 000177 00  AX  0   0 16"
+  ok, _, field = line:find("^(%w+)%s*")
+  if ok == nil then
+    util.log.info("Couldn't find section kind")
     return nil
   end
-  end_col = util.find_char(line, " ", start_col)
-  if start_col == nil or end_col == nil then
-    util.log.trace("Couldn't find section name end")
-    return nil
-  end
-  local kind = line:sub(start_col, end_col - 1)
+  section.kind = field
 
-  return { id = id, name = name, kind = kind }
+  util.log.debug(vim.inspect(section))
+  return section
 end
 
 ---Parses readelf symbol line output into structured data, for example:
@@ -135,129 +128,155 @@ end
 ---@return nvim-elf-file.Symbol? or nil on error
 M.parse_symbol = function(line)
   local util = require("nvim-elf-file.util")
+  local symbol = {}
+  local _
 
-  -- Find:
+  -- "    29: 000000001000011c9    72 FUNC    GLOBAL DEFAULT   16 main"
+  local ok, col, field = line:find("^%s*(%d+):%s*")
+  if ok == nil then
+    util.log.info("Couldn't find symbol id")
+    return nil
+  end
+  symbol.id = field
+
+  line = line:sub(col + 1)
   -- "00000000000011c9    72 FUNC    GLOBAL DEFAULT   16 main"
-  local start_col = util.find_char(line, ":")
-  if start_col == nil then
-    util.log.trace("Couldn't find symbol id")
+  ok, col, field = line:find("^(%x+)%s*")
+  if ok == nil then
+    util.log.info("Couldn't find symbol start address")
     return nil
   end
-  start_col = start_col + 2
+  symbol.start = tonumber(field, 16)
 
-  -- Find:
-  -- "00000000000011c9 "
-  local end_col = util.find_char(line, " ", start_col)
-  if end_col == nil then
-    util.log.trace("Couldn't find end of address")
-    return nil
-  end
-
-  -- Parse:
-  -- "00000000000011c9"
-  local start = tonumber(line:sub(start_col, end_col), 16)
-
-  -- Trim line to:
+  line = line:sub(col + 1)
   -- "72 FUNC    GLOBAL DEFAULT   16 main"
-  line = util.trim(line:sub(end_col))
-  end_col = util.find_char(line, " ")
-  if end_col == nil then
-    util.log.trace("Couldn't find end of size")
+  ok, col, field = line:find("(%d+)%s*")
+  if ok == nil then
+    util.log.info("Couldn't find symbol size")
     return nil
   end
+  symbol.stop = symbol.start + tonumber(field)
 
-  -- Parse:
-  -- "72"
-  local stop = start + tonumber(line:sub(0, end_col - 1))
-
-  -- Trim line to:
+  line = line:sub(col + 1)
   -- "FUNC    GLOBAL DEFAULT   16 main"
-  line = util.trim(line:sub(end_col))
-  local kind_col = util.find_char(line, " ")
-  if kind_col == nil then
-    util.log.trace("Couldn't find end of symbol kind")
+  ok, col, field = line:find("^(%w+)%s*")
+  if ok == nil then
+    util.log.info("Couldn't find symbol kind")
     return nil
   end
+  symbol.kind = field
 
-  -- Parse: "FUNC"
-  local kind = line:sub(0, kind_col - 1)
+  line = line:sub(col + 1)
+  -- "GLOBAL DEFAULT   16 main"
+  ok, col, field = line:find("^(%w+)%s*")
+  if ok == nil then
+    util.log.info("Couldn't find symbol bind")
+    return nil
+  end
+  symbol.bind = field
 
-  return { start = start, stop = stop, kind = kind }
+  line = line:sub(col + 1)
+  -- "DEFAULT   16 main"
+  ok, col, field = line:find("^(%w+)%s*")
+  if ok == nil then
+    util.log.info("Couldn't find symbol visibility")
+    return nil
+  end
+  symbol.visibility = field
+
+  line = line:sub(col + 1)
+  -- "16 main"
+  ok, col, field = line:find("^(%w+)%s*")
+  if ok == nil then
+    util.log.info("Couldn't find symbol section index")
+    return nil
+  end
+  symbol.section_idx = field
+
+  line = line:sub(col + 1)
+  -- "main"
+  ok, _, field = line:find("^(.*)")
+  if ok == nil then
+    util.log.info("Couldn't find symbol section index")
+    return nil
+  end
+  symbol.name = field
+
+  util.log.debug(vim.inspect(symbol))
+  return symbol
 end
 
 ---Dump the section / symbol / function / file under cursor in a new temporary buffer
 M.dump = function()
   local util = require("nvim-elf-file.util")
-  local word = vim.fn.expand("<cWORD>")
 
-  if vim.fn.filereadable(word) == 1 then
-    -- Edit files like normal
-    vim.cmd.edit(word)
-  else
-    local line = vim.fn.getline(".")
-    local cmd
-    local args
-    local bname
+  local line = vim.fn.getline(".")
+  local cmd
+  local args
+  local bname
 
-    if M.is_section_line(line) then
-      local section = M.parse_section(line)
+  if M.is_section_line(line) then
+    local section = M.parse_section(line)
 
-      if section == nil then
-        vim.notify("Failed to parse readelf output!", vim.log.levels.ERROR)
-        util.log.error("Failed to parse readelf output!")
-        return
-      end
-
-      bname = section.name
-      -- Build command
-      cmd = M.readelf()
-      args = { "--wide", "-p", section.name }
-      if section.kind ~= "STRTAB" and section.name ~= ".debug_line_str" and section.name ~= ".debug_str" then
-        args[#args + 1] = "-x"
-        args[#args + 1] = section.name
-      end
-      args[#args + 1] = vim.fn.expand("%")
-    else
-      local symbol = M.parse_symbol(line)
-
-      -- Check validity
-      if symbol == nil then
-        vim.notify("Failed to parse readelf output!", vim.log.levels.ERROR)
-        util.log.error("Failed to parse readelf output!")
-        return
-      end
-
-      ---@diagnostic disable-next-line: need-check-nil
-      if symbol.stop <= symbol.start then
-        vim.notify("Cannot disassemble empty symbol " .. word)
-        util.log.info("Cannot disassemble empty symbol " .. word)
-        return
-      end
-
-      bname = "." .. word .. ".asm"
-      -- Build command
-      cmd = M.objdump()
-      args = { "--wide", "--demangle", "--start-address", symbol.start, "--stop-address", symbol.stop }
-      if symbol.kind == "FUNC" then
-        args[#args + 1] = "--source"
-      else
-        args[#args + 1] = "--full-contents"
-      end
-      args[#args + 1] = vim.fn.expand("%")
+    if section == nil then
+      vim.notify("Failed to parse readelf output!", vim.log.levels.ERROR)
+      util.log.error("Failed to parse readelf output!")
+      return
     end
 
-    -- Open Temporary Buffer with Result
-    util.log.info(cmd .. " " .. table.concat(args, " "))
-    vim.cmd.edit(bname)
-    local buf = vim.api.nvim_get_current_buf()
-    vim.api.nvim_set_option_value("swapfile", false, { buf = buf })
-    util.buf_from_cmd_async(buf, cmd, args, function()
-      vim.api.nvim_set_option_value("bufhidden", "wipe", { buf = buf })
-      vim.api.nvim_set_option_value("readonly", true, { buf = buf })
-      vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
-      vim.api.nvim_set_option_value("modified", false, { buf = buf })
-    end)
+    bname = section.name
+    -- Build command
+    cmd = M.readelf()
+    args = { "--wide", "-p", section.name }
+    if section.kind ~= "STRTAB" and section.name ~= ".debug_line_str" and section.name ~= ".debug_str" then
+      args[#args + 1] = "-x"
+      args[#args + 1] = section.name
+    end
+    args[#args + 1] = vim.fn.expand("%")
+  else
+    local symbol = M.parse_symbol(line)
+
+    -- Check validity
+    if symbol == nil then
+      vim.notify("Failed to parse readelf output!", vim.log.levels.ERROR)
+      util.log.error("Failed to parse readelf output!")
+      return
+    end
+
+    if symbol.kind == "FILE" and vim.fn.filereadable(symbol.name) == 1 then
+      vim.cmd.edit(symbol.name)
+      return
+    end
+
+    if symbol.stop <= symbol.start then
+      vim.notify("Cannot disassemble empty symbol " .. symbol.name)
+      util.log.info("Cannot disassemble empty symbol " .. symbol.name)
+      return
+    end
+
+    bname = "." .. symbol.name .. ".asm"
+    -- Build command
+    cmd = M.objdump()
+    args = { "--wide", "--demangle", "--start-address", symbol.start, "--stop-address", symbol.stop }
+    if symbol.kind == "FUNC" then
+      args[#args + 1] = "--source"
+    else
+      args[#args + 1] = "--full-contents"
+    end
+    args[#args + 1] = vim.fn.expand("%")
   end
+
+  -- Open Temporary Buffer with Result
+  util.log.info(cmd .. " " .. table.concat(args, " "))
+  vim.cmd.edit(bname)
+  local buf = vim.api.nvim_get_current_buf()
+  vim.bo[buf].swapfile = false
+  util.buf_from_cmd_async(buf, cmd, args, function()
+    vim.bo[buf].bufhidden = "wipe"
+    vim.bo[buf].readonly = true
+    vim.bo[buf].modifiable = false
+    vim.bo[buf].modified = false
+  end)
 end
 
 ---Checks ELF headers to select readelf
@@ -318,7 +337,7 @@ M.toggle_elf = function()
     },
     "elf",
     function(buf)
-      vim.api.nvim_set_option_value("syntax", "elf", { buf = buf })
+      vim.bo[buf].syntax = "elf"
       vim.keymap.set("n", "<cr>", M.dump, { buffer = true, desc = "Dump section/symbol/file under cursor" })
     end
   )
@@ -328,7 +347,7 @@ end
 M.toggle_bin = function()
   local util = require("nvim-elf-file.util")
   util.toggle("xxd", { vim.fn.expand("%") }, "bin", function(buf)
-    vim.api.nvim_set_option_value("syntax", "xxd", { buf = buf })
+    vim.bo[buf].syntax = "xxd"
   end)
 end
 
