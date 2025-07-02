@@ -2,7 +2,7 @@ local M = {}
 
 M.log = require("plenary.log").new({
   plugin = "nvim-elf-file",
-  level = "info",
+  level = "trace",
   use_console = false,
   use_file = true,
   file_levels = true,

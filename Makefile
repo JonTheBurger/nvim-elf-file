@@ -23,7 +23,7 @@ clean: ## Deletes the build dir
 distclean: ## Resets the repo back to its state at checkout
 	git clean -xdff
 
-check: fmt lint test cov ## Runs quality assurance steps
+check: format lint test cov ## Runs quality assurance steps
 
 test: ## Runs tests
 	@printf '${BLU}=== testing ===${RST}\n'
@@ -37,7 +37,7 @@ cov: ## Generates test coverage
 	@printf '${BLU}=== coverage ===${RST}\n'
 	@luacov
 
-fmt: ## Reformats code
+format: ## Reformats code
 	@printf '${BLU}=== formatting ===${RST}\n'
 	@stylua lua plugin tests
 

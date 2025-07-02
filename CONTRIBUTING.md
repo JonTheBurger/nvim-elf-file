@@ -9,8 +9,21 @@
 ```
 
 ## Roadmap
-- file header to arm-
+- async
 - config
+- docs
+
+
+| Value (from `readelf`)          | Architecture         |
+| ------------------------------- | -------------------- |
+| `Intel 80386`                   | 32-bit x86           |
+| `Advanced Micro Devices X86-64` | 64-bit x86 (x86\_64) |
+| `ARM`                           | 32-bit ARM           |
+| `AArch64`                       | 64-bit ARM           |
+| `MIPS R3000`                    | MIPS                 |
+| `RISC-V`                        | RISC-V               |
+| `PowerPC`                       | PowerPC              |
+| `SPARC`                         | SPARC                |
 
 --------------------------------------------------------------------------------
 

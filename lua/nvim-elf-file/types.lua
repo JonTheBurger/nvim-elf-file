@@ -5,6 +5,11 @@
 ---@field readelf string|fun(): string
 ---@field log_level string
 
+---@class nvim-elf-file.Header
+---ELF file header
+---@field type string EXEC (executable) or REL (static|shared library/object file)
+---@field machine string Architecture of ELF file (e.g. ARM)
+
 ---@class nvim-elf-file.Section
 ---@field id integer Section number
 ---@field name string Name of the section

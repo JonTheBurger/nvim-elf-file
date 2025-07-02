@@ -31,10 +31,54 @@ M.is_elf_file = function(file)
 end
 
 ---Checks if a readelf line refers to a section
+---Looks for a number in square brackets at line start, e.g. "  [ 12]"
 ---@param line string Line of readelf output
 ---@return boolean True if the line contains a section
 M.is_section_line = function(line)
-  return line:match("^ *%[ *%d+%]") ~= nil
+  return line:match("^%s*%[%s*%d+%]") ~= nil
+end
+
+---Parses readelf --file-header output into structured data, for example:
+---ELF Header:
+---...
+---  Type:                              EXEC (Executable file)
+---  Machine:                           ARM
+---@param text string|string[] output lines from readelf
+---@return nvim-elf-file.Header? or nil on error
+M.parse_header = function(text)
+  local util = require("nvim-elf-file.util")
+  local header = {}
+
+  local lines = text
+  if type(text) == "string" then
+    lines = {}
+    for line in text:gmatch("[^\r\n]+") do
+      table.insert(lines, line)
+    end
+  end
+
+  ---@diagnostic disable-next-line: param-type-mismatch
+  for _, line in ipairs(lines) do
+    local kind = line:match("%s*Type:%s*(%S.*)")
+    if kind then
+      header.type = kind
+      goto continue
+    end
+
+    local machine = line:match("%s*Machine:%s*(%S.*)")
+    if machine then
+      header.machine = machine
+      goto continue
+    end
+
+    ::continue::
+  end
+
+  if not header.type or not header.machine then
+    util.log.trace("Couldn't parse header fields")
+    return nil
+  end
+  return header
 end
 
 ---Parses readelf section line output into structured data, for example:
@@ -165,10 +209,8 @@ M.dump = function()
 
       bname = section.name
       -- Build command
-      cmd = "readelf --wide"
-      if section.kind == "STRTAB" or section.name == ".debug_line_str" or section.name == ".debug_str" then
-        cmd = cmd .. " -p " .. section.name
-      else
+      cmd = M.readelf() .. " --wide -p " .. section.name
+      if section.kind ~= "STRTAB" and section.name ~= ".debug_line_str" and section.name ~= ".debug_str" then
         cmd = cmd .. " -x " .. section.name
       end
       cmd = cmd .. " " .. vim.fn.expand("%")
@@ -191,7 +233,7 @@ M.dump = function()
 
       bname = "." .. word .. ".asm"
       -- Build command
-      cmd = "objdump --wide --demangle --start-address " .. symbol.start .. " --stop-address " .. symbol.stop
+      cmd = M.objdump() .. " --wide --demangle --start-address " .. symbol.start .. " --stop-address " .. symbol.stop
       if symbol.kind == "FUNC" then
         cmd = cmd .. " --source"
       else
@@ -268,9 +310,53 @@ M._toggle = function(cmd, ft, callback)
   end
 end
 
+---Checks ELF headers to select readelf
+---@param file? string ELF file to read header
+---@return string Architecture-specific readelf command
+M.readelf = function(file)
+  if not file then
+    file = vim.fn.expand("%")
+  end
+  local output = vim.fn.system({
+    "readelf",
+    "--wide",
+    "--file-header",
+    file,
+  })
+
+  local header = M.parse_header(output)
+  if header and header.machine == "ARM" then
+    return "arm-none-eabi-readelf"
+  end
+
+  return "readelf"
+end
+
+---Checks ELF headers to select objdump
+---@param file? string ELF file to read header
+---@return string Architecture-specific objdump command
+M.objdump = function(file)
+  if not file then
+    file = vim.fn.expand("%")
+  end
+  local output = vim.fn.system({
+    "readelf",
+    "--wide",
+    "--file-header",
+    file,
+  })
+
+  local header = M.parse_header(output)
+  if header and header.machine == "ARM" then
+    return "arm-none-eabi-objdump"
+  end
+
+  return "objdump"
+end
+
 ---Dumps ELF file symbol table in the current buffer, or restores the ELF file.
 M.toggle_elf = function()
-  local cmd = "readelf --wide --demangle --section-headers --syms " .. vim.fn.expand("%")
+  local cmd = M.readelf() .. " --wide --demangle --section-headers --syms " .. vim.fn.expand("%")
   M._toggle(cmd, "elf", function()
     vim.keymap.set("n", "<cr>", M.dump, { buffer = true, desc = "Dump section/symbol/file under cursor" })
   end)
