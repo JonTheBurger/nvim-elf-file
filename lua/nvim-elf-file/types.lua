@@ -16,6 +16,7 @@
 ---@field kind string Section type, such as PROGBITS or STRTAB
 
 ---@class nvim-elf-file.Symbol
+---@field name string Name of symbol
 ---@field start integer Start address of symbol
 ---@field stop integer Stop address of symbol
 ---@field kind string Symbol kind, such as FUNC

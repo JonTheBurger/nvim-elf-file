@@ -196,6 +196,7 @@ M.dump = function()
   else
     local line = vim.fn.getline(".")
     local cmd
+    local args
     local bname
 
     if M.is_section_line(line) then
@@ -209,11 +210,13 @@ M.dump = function()
 
       bname = section.name
       -- Build command
-      cmd = M.readelf() .. " --wide -p " .. section.name
+      cmd = M.readelf()
+      args = { "--wide", "-p", section.name }
       if section.kind ~= "STRTAB" and section.name ~= ".debug_line_str" and section.name ~= ".debug_str" then
-        cmd = cmd .. " -x " .. section.name
+        args[#args + 1] = "-x"
+        args[#args + 1] = section.name
       end
-      cmd = cmd .. " " .. vim.fn.expand("%")
+      args[#args + 1] = vim.fn.expand("%")
     else
       local symbol = M.parse_symbol(line)
 
@@ -233,80 +236,27 @@ M.dump = function()
 
       bname = "." .. word .. ".asm"
       -- Build command
-      cmd = M.objdump() .. " --wide --demangle --start-address " .. symbol.start .. " --stop-address " .. symbol.stop
+      cmd = M.objdump()
+      args = { "--wide", "--demangle", "--start-address", symbol.start, "--stop-address", symbol.stop }
       if symbol.kind == "FUNC" then
-        cmd = cmd .. " --source"
+        args[#args + 1] = "--source"
       else
-        cmd = cmd .. " --full-contents"
+        args[#args + 1] = "--full-contents"
       end
-      cmd = cmd .. " " .. vim.fn.expand("%")
+      args[#args + 1] = vim.fn.expand("%")
     end
 
     -- Open Temporary Buffer with Result
-    util.log.info(cmd)
+    util.log.info(cmd .. " " .. table.concat(args, " "))
     vim.cmd.edit(bname)
-    vim.cmd("%!" .. cmd)
-    vim.bo.bufhidden = "wipe"
-    vim.bo.modifiable = false
-    vim.bo.modified = false
-    vim.bo.swapfile = false
-  end
-end
-
----Generic in-place buffer toggle
----@param cmd string Command to run to replace buffer contents
----@param ft string FileType used to store buffer state in is_<ft>_on
----@param callback? fun() Called on the buffer when cmd completes
-M._toggle = function(cmd, ft, callback)
-  local util = require("nvim-elf-file.util")
-  local key = "is_" .. ft .. "_on"
-  if vim.b.nvim_elf_file == nil then
-    ---@type nvim-elf-file.BufferOpts
-    vim.b.nvim_elf_file = {}
-  end
-
-  if vim.b.nvim_elf_file[key] == false then
-    util.log.trace("toggle " .. key .. " was false")
-
-    -- Store previous state, temporarily make buffer writable
-    local buf_state = util.get_buf_state()
-    vim.bo.modifiable = true
-    vim.bo.readonly = false
-
-    util.log.info(cmd)
-    vim.cmd("%!" .. cmd)
-
-    -- Set modified to false (because we just replaced (edited) buffer contents)
-    vim.bo.modified = false
-    vim.bo.swapfile = false
-    vim.bo.modifiable = false
-    vim.bo.readonly = true
-
-    vim.b.nvim_elf_file = {
-      buf_state = buf_state,
-      [key] = true,
-    }
-
-    if callback ~= nil then
-      callback()
-    end
-  elseif vim.b.nvim_elf_file[key] == true then
-    util.log.trace("toggle " .. key .. " was true")
-
-    -- Save buf_state as vim.cmd.edit will wipe out vim.b
-    local buf_state = vim.b.nvim_elf_file.buf_state
-    vim.b.nvim_elf_file = { [key] = nil }
-
-    -- Re-invokes this function, so we set [key] to nil first to no-op the run
-    vim.cmd.edit("%")
-
-    util.set_buf_state(buf_state or {})
-    vim.b.nvim_elf_file = { [key] = false }
-  else
-    -- Commands like vim.cmd.edit(...) re-invoke this function with vim.b cleared.
-    -- This causes vim.b.nvim_elf_file[key] to be `nil`.
-    -- We use the nil case as a no-op to prevent infinite recursion
-    util.log.trace("toggle " .. key .. " was nil")
+    local buf = vim.api.nvim_get_current_buf()
+    vim.api.nvim_set_option_value("swapfile", false, { buf = buf })
+    util.buf_from_cmd_async(buf, cmd, args, function()
+      vim.api.nvim_set_option_value("bufhidden", "wipe", { buf = buf })
+      vim.api.nvim_set_option_value("readonly", true, { buf = buf })
+      vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+      vim.api.nvim_set_option_value("modified", false, { buf = buf })
+    end)
   end
 end
 
@@ -356,15 +306,30 @@ end
 
 ---Dumps ELF file symbol table in the current buffer, or restores the ELF file.
 M.toggle_elf = function()
-  local cmd = M.readelf() .. " --wide --demangle --section-headers --syms " .. vim.fn.expand("%")
-  M._toggle(cmd, "elf", function()
-    vim.keymap.set("n", "<cr>", M.dump, { buffer = true, desc = "Dump section/symbol/file under cursor" })
-  end)
+  local util = require("nvim-elf-file.util")
+  util.toggle(
+    M.readelf(),
+    {
+      "--wide",
+      "--demangle",
+      "--section-headers",
+      "--syms",
+      vim.fn.expand("%"),
+    },
+    "elf",
+    function(buf)
+      vim.api.nvim_set_option_value("syntax", "elf", { buf = buf })
+      vim.keymap.set("n", "<cr>", M.dump, { buffer = true, desc = "Dump section/symbol/file under cursor" })
+    end
+  )
 end
 
 ---Dumps bin as hex in the current buffer, or restores the bin file.
 M.toggle_bin = function()
-  M._toggle("xxd", "bin")
+  local util = require("nvim-elf-file.util")
+  util.toggle("xxd", { vim.fn.expand("%") }, "bin", function(buf)
+    vim.api.nvim_set_option_value("syntax", "xxd", { buf = buf })
+  end)
 end
 
 return M

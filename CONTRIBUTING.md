@@ -9,9 +9,11 @@
 ```
 
 ## Roadmap
-- async
+- lookup symbol name, fixup parsing
 - config
 - docs
+- toggle anything as bin
+- set cursor position as byte index
 
 
 | Value (from `readelf`)          | Architecture         |
