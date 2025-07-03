@@ -5,6 +5,6 @@ if require("nvim-elf-file.elf").is_elf_file() then
   end
 
   if not vim.b.nvim_elf_file.is_elf_on then
-    require("nvim-elf-file.elf").toggle_elf()
+    require("nvim-elf-file").toggle_elf()
   end
 end

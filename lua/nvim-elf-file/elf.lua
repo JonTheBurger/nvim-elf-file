@@ -59,19 +59,25 @@ M.parse_header = function(text)
 
   ---@diagnostic disable-next-line: param-type-mismatch
   for _, line in ipairs(lines) do
-    local kind = line:match("%s*Type:%s*(%S.*)")
-    if kind then
-      header.type = kind
-      goto continue
+    -- Not all versions of nvim ship LuaJIT (which has goto & ::continue::)
+    -- nvim will have plain Lua 5.1 at worst, which does not have goto & ::continue::
+    local continue = false
+
+    if not continue then
+      local kind = line:match("%s*Type:%s*(%S.*)")
+      if kind then
+        header.type = kind
+        continue = true
+      end
     end
 
-    local machine = line:match("%s*Machine:%s*(%S.*)")
-    if machine then
-      header.machine = machine
-      goto continue
+    if not continue then
+      local machine = line:match("%s*Machine:%s*(%S.*)")
+      if machine then
+        header.machine = machine
+        -- continue = true
+      end
     end
-
-    ::continue::
   end
 
   if not header.type or not header.machine then
@@ -206,79 +212,6 @@ M.parse_symbol = function(line)
   return symbol
 end
 
----Dump the section / symbol / function / file under cursor in a new temporary buffer
-M.dump = function()
-  local util = require("nvim-elf-file.util")
-
-  local line = vim.fn.getline(".")
-  local cmd
-  local args
-  local bname
-
-  if M.is_section_line(line) then
-    local section = M.parse_section(line)
-
-    if section == nil then
-      vim.notify("Failed to parse readelf output!", vim.log.levels.ERROR)
-      util.log.error("Failed to parse readelf output!")
-      return
-    end
-
-    bname = section.name
-    -- Build command
-    cmd = M.readelf()
-    args = { "--wide", "-p", section.name }
-    if section.kind ~= "STRTAB" and section.name ~= ".debug_line_str" and section.name ~= ".debug_str" then
-      args[#args + 1] = "-x"
-      args[#args + 1] = section.name
-    end
-    args[#args + 1] = vim.fn.expand("%")
-  else
-    local symbol = M.parse_symbol(line)
-
-    -- Check validity
-    if symbol == nil then
-      vim.notify("Failed to parse readelf output!", vim.log.levels.ERROR)
-      util.log.error("Failed to parse readelf output!")
-      return
-    end
-
-    if symbol.kind == "FILE" and vim.fn.filereadable(symbol.name) == 1 then
-      vim.cmd.edit(symbol.name)
-      return
-    end
-
-    if symbol.stop <= symbol.start then
-      vim.notify("Cannot disassemble empty symbol " .. symbol.name)
-      util.log.info("Cannot disassemble empty symbol " .. symbol.name)
-      return
-    end
-
-    bname = "." .. symbol.name .. ".asm"
-    -- Build command
-    cmd = M.objdump()
-    args = { "--wide", "--demangle", "--start-address", symbol.start, "--stop-address", symbol.stop }
-    if symbol.kind == "FUNC" then
-      args[#args + 1] = "--source"
-    else
-      args[#args + 1] = "--full-contents"
-    end
-    args[#args + 1] = vim.fn.expand("%")
-  end
-
-  -- Open Temporary Buffer with Result
-  util.log.info(cmd .. " " .. table.concat(args, " "))
-  vim.cmd.edit(bname)
-  local buf = vim.api.nvim_get_current_buf()
-  vim.bo[buf].swapfile = false
-  util.buf_from_cmd_async(buf, cmd, args, function()
-    vim.bo[buf].bufhidden = "wipe"
-    vim.bo[buf].readonly = true
-    vim.bo[buf].modifiable = false
-    vim.bo[buf].modified = false
-  end)
-end
-
 ---Checks ELF headers to select readelf
 ---@param file? string ELF file to read header
 ---@return string Architecture-specific readelf command
@@ -321,34 +254,6 @@ M.objdump = function(file)
   end
 
   return "objdump"
-end
-
----Dumps ELF file symbol table in the current buffer, or restores the ELF file.
-M.toggle_elf = function()
-  local util = require("nvim-elf-file.util")
-  util.toggle(
-    M.readelf(),
-    {
-      "--wide",
-      "--demangle",
-      "--section-headers",
-      "--syms",
-      vim.fn.expand("%"),
-    },
-    "elf",
-    function(buf)
-      vim.bo[buf].syntax = "elf"
-      vim.keymap.set("n", "<cr>", M.dump, { buffer = true, desc = "Dump section/symbol/file under cursor" })
-    end
-  )
-end
-
----Dumps bin as hex in the current buffer, or restores the bin file.
-M.toggle_bin = function()
-  local util = require("nvim-elf-file.util")
-  util.toggle("xxd", { vim.fn.expand("%") }, "bin", function(buf)
-    vim.bo[buf].syntax = "xxd"
-  end)
 end
 
 return M

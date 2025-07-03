@@ -85,6 +85,11 @@ end
 M.toggle = function(cmd, args, ft, callback)
   local util = require("nvim-elf-file.util")
   local key = "is_" .. ft .. "_on"
+
+  -- `is_<ft>_on` variables are used to determine if it's in a "virtual" file
+  -- mode like `toggle_bin` mode. Note that many vim functions clear `vim.b`,
+  -- such as `vim.fn.edit`. To account for cases where `is_<ft>_on` is set to
+  -- `nil`, a `nil` value is treated as a no-op by the toggle functions.
   if vim.b.nvim_elf_file == nil then
     ---@type nvim-elf-file.BufferOpts
     vim.b.nvim_elf_file = {}
@@ -98,7 +103,7 @@ M.toggle = function(cmd, args, ft, callback)
     vim.bo.modifiable = true
     vim.bo.readonly = false
 
-    util.log.info(cmd)
+    util.log.info(cmd .. " " .. table.concat(args, " "))
 
     -- Set modified to false (because we just replaced (edited) buffer contents)
     vim.bo.swapfile = false
