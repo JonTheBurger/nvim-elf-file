@@ -9,7 +9,6 @@
 ```
 
 ## Roadmap
-- config
 - tests
 - gifs in docs
 - ci & contributing

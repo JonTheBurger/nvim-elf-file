@@ -10,8 +10,8 @@
 ---@field readelf? string|fun(string): string Name/path of readelf program or a function taking in a readelf machine and returning a readelf program ($PATH is searched)
 ---@field objdump? string|fun(string): string Name/path of objdump program or a function taking in a objdump machine and returning a objdump program ($PATH is searched)
 ---@field xxd? string Name/path of xxd program ($PATH is searched)
----@field keymaps? [string, nvim-elf-file.Command] plugin buffer-specific key mappings
----@field automatic? [string, boolean] Disable automatic toggle per-filetype
+---@field keymaps? table[string, nvim-elf-file.Command] plugin buffer-specific key mappings
+---@field automatic? table[string, boolean] Disable automatic toggle per-filetype
 ---@field bufhidden? nvim-elf-file.BufHidden Action to take when exiting a section/symbol dump buffer
 ---@field log_level? nvim-elf-file.LogLevel Verbosity of `vim.fn.stdpath("state") .. "/nvim-elf-file.log"`
 
@@ -20,8 +20,8 @@
 ---@field readelf fun(string): string Function to find readelf based on machine name
 ---@field objdump fun(string): string Function to find objdump based on machine name
 ---@field xxd string xxd program
----@field keymaps [string, nvim-elf-file.Command] plugin buffer-specific key mappings
----@field automatic [string, boolean] Disable automatic toggle_elf / toggle_bin
+---@field keymaps table[string, nvim-elf-file.Command] plugin buffer-specific key mappings
+---@field automatic table[string, boolean] Disable automatic toggle_elf / toggle_bin
 ---@field bufhidden nvim-elf-file.BufHidden Action to take when exiting a section/symbol dump buffer
 ---@field log_level nvim-elf-file.LogLevel Verbosity of `vim.fn.stdpath("state") .. "/nvim-elf-file.log"`
 

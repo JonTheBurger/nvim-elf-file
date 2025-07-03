@@ -1,7 +1,7 @@
 if not vim.g.loaded_nvim_elf_file then
-  local elf = require("nvim-elf-file")
+  local api = require("nvim-elf-file")
   local when_elf = function(path)
-    if elf.is_elf_file(path) then
+    if api.is_elf_file(path) then
       return "elf"
     end
   end
@@ -27,18 +27,18 @@ if not vim.g.loaded_nvim_elf_file then
     if sub == "toggle" then
       local toggle = opts.fargs[2]
       if toggle == "bin" then
-        elf.toggle_bin()
+        api.toggle_bin()
       elseif toggle == "elf" then
-        elf.toggle_elf()
+        api.toggle_elf()
       else
-        if elf.is_elf_file() then
-          elf.toggle_elf()
+        if api.is_elf_file() then
+          api.toggle_elf()
         else
-          elf.toggle_bin()
+          api.toggle_bin()
         end
       end
     elseif sub == "dump" then
-      elf.dump()
+      api.dump()
       -- elseif sub == "hover" then
       --   elf.hover()
       -- elseif sub == "search" then
@@ -60,35 +60,26 @@ if not vim.g.loaded_nvim_elf_file then
     end,
   })
 
-  vim.keymap.set(
-    "n",
-    "<Plug>(nvim-elf-file-toggle-elf)",
-    require("nvim-elf-file").toggle_elf,
-    { noremap = true, desc = "Toggle readelf display" }
-  )
-  vim.keymap.set(
-    "n",
-    "<Plug>(nvim-elf-file-toggle-bin)",
-    require("nvim-elf-file").toggle_bin,
-    { noremap = true, desc = "Toggle xxd binary display" }
-  )
-  vim.keymap.set(
-    "n",
-    "<Plug>(nvim-elf-file-dump)",
-    require("nvim-elf-file").dump,
-    { noremap = true, desc = "Dump section/symbol/file under cursor" }
-  )
+  vim.keymap.set("n", "<Plug>(nvim-elf-file-toggle-elf)", function()
+    require("nvim-elf-file").toggle_elf()
+  end, { noremap = true, desc = api.COMMANDS["toggle-elf"] })
+  vim.keymap.set("n", "<Plug>(nvim-elf-file-toggle-bin)", function()
+    require("nvim-elf-file").toggle_bin()
+  end, { noremap = true, desc = api.COMMANDS["toggle-bin"] })
+  vim.keymap.set("n", "<Plug>(nvim-elf-file-dump)", function()
+    require("nvim-elf-file").dump()
+  end, { noremap = true, desc = api.COMMANDS["dump"] })
   -- vim.keymap.set(
   --   "n",
   --   "<Plug>(nvim-elf-file-hover)",
-  --   require("nvim-elf-file").hover,
-  --   { noremap = true, desc = "Show a hover with additional info" }
+  --   function() require("nvim-elf-file").hover() end,
+  --   { noremap = true, desc = elf.COMMANDS["hover"] }
   -- )
   -- vim.keymap.set(
   --   "n",
   --   "<Plug>(nvim-elf-file-search)",
-  --   require("nvim-elf-file").search,
-  --   { noremap = true, desc = "Search for raw bytes in a binary file" }
+  --   function() require("nvim-elf-file").search() end,
+  --   { noremap = true, desc = elf.COMMANDS["search"] }
   -- )
 end
 

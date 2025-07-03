@@ -125,6 +125,9 @@ Some common machines include:
 | `PowerPC`                       | PowerPC              |
 | `SPARC`                         | SPARC                |
 
+> [!TIP]
+> You can set `vim.g.loaded_nvim_elf_file = true` to turn off the plugin entirely.
+
 --------------------------------------------------------------------------------
 
 ## Usage

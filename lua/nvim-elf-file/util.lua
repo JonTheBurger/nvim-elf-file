@@ -36,7 +36,7 @@ end
 ---@param args string[] Arguments to pass to exe
 ---@param callback fun(integer) Function to call upon completion; buf passed in.
 M.buf_from_cmd_async = function(buf, cmd, args, callback)
-  --First wipe the buffer
+  --First clear the buffer
   vim.bo[buf].readonly = false
   vim.bo[buf].modifiable = true
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, {})

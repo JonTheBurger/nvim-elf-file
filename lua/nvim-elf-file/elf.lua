@@ -219,19 +219,20 @@ M.readelf = function(file)
   if not file then
     file = vim.fn.expand("%")
   end
+  local opt = require("nvim-elf-file.config").options
+  local exe = opt.readelf("")
   local output = vim.fn.system({
-    "readelf",
+    exe,
     "--wide",
     "--file-header",
     file,
   })
 
   local header = M.parse_header(output)
-  if header and header.machine == "ARM" then
-    return "arm-none-eabi-readelf"
+  if header ~= nil then
+    exe = opt.readelf(header.machine)
   end
-
-  return "readelf"
+  return exe
 end
 
 ---Checks ELF headers to select objdump
@@ -241,19 +242,20 @@ M.objdump = function(file)
   if not file then
     file = vim.fn.expand("%")
   end
+  local opt = require("nvim-elf-file.config").options
+  local readelf = opt.readelf("")
   local output = vim.fn.system({
-    "readelf",
+    readelf,
     "--wide",
     "--file-header",
     file,
   })
 
   local header = M.parse_header(output)
-  if header and header.machine == "ARM" then
-    return "arm-none-eabi-objdump"
+  if header ~= nil then
+    return opt.objdump(header.machine)
   end
-
-  return "objdump"
+  return opt.objdump("")
 end
 
 return M

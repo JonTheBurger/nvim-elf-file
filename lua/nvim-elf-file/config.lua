@@ -63,9 +63,21 @@ M.Options = Options
 ---@param opts nvim-elf-file.UserOptions
 ---@return nvim-elf-file.Options
 function Options:new(opts)
-  local resolved = vim.tbl_deep_extend("force", {}, M.defaults, opts)
-  local options = vim.deepcopy(resolved, true)
-  options.user = resolved
+  local merged = vim.tbl_deep_extend("force", {}, M.defaults, opts)
+  ---@type nvim-elf-file.Options
+  local options = vim.deepcopy(merged, true)
+
+  options.user = merged
+  if type(merged.readelf) == "string" then
+    options.readelf = function(_)
+      return merged.readelf
+    end
+  end
+  if type(merged.objdump) == "string" then
+    options.objdump = function(_)
+      return merged.objdump
+    end
+  end
 
   setmetatable(options, self)
   return options
@@ -96,19 +108,11 @@ M.setup = function(opts)
   M.options:apply()
 end
 
----@type nvim-elf-file.Command[]
-local COMMANDS = { "toggle-elf", "toggle-bin", "dump" } -- , "hover", "search" }
-
----@type nvim-elf-file.BufHidden[]
-local BUF_HIDDEN = { "", "hide", "unload", "delete", "wipe" }
-
----@type nvim-elf-file.LogLevel[]
-local LOG_LEVELS = { "trace", "debug", "info", "warn", "error", "critical" }
-
 ---Checks that the user config is valid
 ---@param opts nvim-elf-file.UserOptions Plugin options
 ---@return boolean, string Success + error message
 M.validate = function(opts)
+  local api = require("nvim-elf-file")
   local iter = require("plenary.iterators")
   local is_executable = function(exe)
     return type(exe) == "string" and vim.fn.executable(exe) == 1
@@ -134,10 +138,8 @@ M.validate = function(opts)
       vim.validate('keymaps["' .. tostring(key) .. '"]', key, "string")
       vim.validate('keymaps["' .. tostring(key) .. '"] = "' .. tostring(value) .. '"', value, "string")
       vim.validate('keymaps["' .. tostring(key) .. '"] = "' .. tostring(value) .. '"', value, function(k)
-        return iter.iter(COMMANDS):any(function(e)
-          return e == k
-        end)
-      end, '"' .. table.concat(COMMANDS, '"|"') .. '"')
+        return api.COMMANDS[k] ~= nil
+      end, '"' .. table.concat(api.COMMANDS, '"|"') .. '"')
     end
 
     vim.validate("automatic", opts.automatic, "table")
@@ -147,16 +149,14 @@ M.validate = function(opts)
     end
 
     vim.validate("bufhidden", opts.bufhidden, function(k)
-      return iter.iter(BUF_HIDDEN):any(function(e)
-        return e == k
-      end)
-    end, '"' .. table.concat(BUF_HIDDEN, '"|"') .. '"')
+      return api.BUF_HIDDEN[k] ~= nil
+    end, '"' .. table.concat(api.BUF_HIDDEN, '"|"') .. '"')
 
     vim.validate("log_level", opts.log_level, function(k)
-      return iter.iter(LOG_LEVELS):any(function(e)
+      return iter.iter(api.LOG_LEVELS):any(function(e)
         return e == k
       end)
-    end, '"' .. table.concat(LOG_LEVELS, '"|"') .. '"')
+    end, '"' .. table.concat(api.LOG_LEVELS, '"|"') .. '"')
   end)
   return ok, tostring(err)
 end

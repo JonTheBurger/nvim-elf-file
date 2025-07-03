@@ -15,7 +15,13 @@ end
 
 ---Dumps ELF file symbol table in the current buffer, or restores the ELF file.
 M.toggle_elf = function()
+  if vim.b.nvim_elf_file == nil then
+    vim.b.nvim_elf_file = { is_elf_on = false }
+  end
+
+  local api = require("nvim-elf-file")
   local elf = require("nvim-elf-file.elf")
+  local opt = require("nvim-elf-file.config").options
   local util = require("nvim-elf-file.util")
   util.toggle(
     elf.readelf(),
@@ -29,12 +35,9 @@ M.toggle_elf = function()
     "elf",
     function(buf)
       vim.bo[buf].syntax = "elf"
-      vim.keymap.set(
-        "n",
-        "<cr>",
-        "<Plug>(nvim-elf-file-dump)",
-        { buffer = buf, desc = "Dump section/symbol/file under cursor" }
-      )
+      for key, value in pairs(opt.keymaps) do
+        vim.keymap.set("n", key, "<Plug>(nvim-elf-file-" .. value .. ")", { buffer = buf, desc = api.COMMANDS[value] })
+      end
     end
   )
 end
@@ -45,8 +48,9 @@ M.toggle_bin = function()
     vim.b.nvim_elf_file = { is_bin_on = false }
   end
 
+  local opt = require("nvim-elf-file.config").options
   local util = require("nvim-elf-file.util")
-  util.toggle("xxd", { vim.fn.expand("%") }, "bin", function(buf)
+  util.toggle(opt.xxd, { vim.fn.expand("%") }, "bin", function(buf)
     vim.bo[buf].syntax = "xxd"
   end)
 end
@@ -54,6 +58,7 @@ end
 ---Dump the section / symbol / function / file under cursor in a new temporary buffer
 M.dump = function()
   local elf = require("nvim-elf-file.elf")
+  local opt = require("nvim-elf-file.config").options
   local util = require("nvim-elf-file.util")
 
   local line = vim.fn.getline(".")
@@ -118,7 +123,7 @@ M.dump = function()
   local buf = vim.api.nvim_get_current_buf()
   vim.bo[buf].swapfile = false
   util.buf_from_cmd_async(buf, cmd, args, function()
-    vim.bo[buf].bufhidden = "wipe"
+    vim.bo[buf].bufhidden = opt.bufhidden
     vim.bo[buf].readonly = true
     vim.bo[buf].modifiable = false
     vim.bo[buf].modified = false
@@ -132,5 +137,26 @@ end
 ---Search for raw bytes in a bin file
 -- M.search = function()
 -- end
+
+---@type table[nvim-elf-file.Command, string]
+M.COMMANDS = {
+  ["toggle-elf"] = "Toggle readelf display",
+  ["toggle-bin"] = "Toggle xxd binary display",
+  ["dump"] = "Dump section/symbol/file under cursor",
+  -- ["hover"] = "Show a hover with additional info",
+  -- ["search"] = "Search for raw bytes in a binary file",
+}
+
+---@type table[nvim-elf-file.BufHidden, string]
+M.BUF_HIDDEN = {
+  [""] = "",
+  ["hide"] = "",
+  ["unload"] = "",
+  ["delete"] = "",
+  ["wipe"] = "",
+}
+
+---@type nvim-elf-file.LogLevel[]
+M.LOG_LEVELS = { "trace", "debug", "info", "warn", "error", "critical" }
 
 return M
