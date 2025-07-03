@@ -1,6 +1,9 @@
-vim-elf-file-links	vim-elf-file.txt	/*vim-elf-file-links*
-vim-elf-file-nvim-elf-file	vim-elf-file.txt	/*vim-elf-file-nvim-elf-file*
-vim-elf-file-nvim-elf-file-configuration	vim-elf-file.txt	/*vim-elf-file-nvim-elf-file-configuration*
-vim-elf-file-nvim-elf-file-installation	vim-elf-file.txt	/*vim-elf-file-nvim-elf-file-installation*
-vim-elf-file-table-of-contents	vim-elf-file.txt	/*vim-elf-file-table-of-contents*
-vim-elf-file.txt	vim-elf-file.txt	/*vim-elf-file.txt*
+nvim-elf-file-links	nvim-elf-file.txt	/*nvim-elf-file-links*
+nvim-elf-file-nvim-elf-file	nvim-elf-file.txt	/*nvim-elf-file-nvim-elf-file*
+nvim-elf-file-nvim-elf-file-configuration	nvim-elf-file.txt	/*nvim-elf-file-nvim-elf-file-configuration*
+nvim-elf-file-nvim-elf-file-cookbook	nvim-elf-file.txt	/*nvim-elf-file-nvim-elf-file-cookbook*
+nvim-elf-file-nvim-elf-file-features	nvim-elf-file.txt	/*nvim-elf-file-nvim-elf-file-features*
+nvim-elf-file-nvim-elf-file-installation	nvim-elf-file.txt	/*nvim-elf-file-nvim-elf-file-installation*
+nvim-elf-file-nvim-elf-file-usage	nvim-elf-file.txt	/*nvim-elf-file-nvim-elf-file-usage*
+nvim-elf-file-table-of-contents	nvim-elf-file.txt	/*nvim-elf-file-table-of-contents*
+nvim-elf-file.txt	nvim-elf-file.txt	/*nvim-elf-file.txt*

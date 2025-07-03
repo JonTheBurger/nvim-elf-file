@@ -10,24 +10,28 @@ M.log = require("plenary.log").new({
 })
 
 ---Gets the restorable state of the current buffer
+---@param buf? integer buffer id
 ---@return nvim-elf-file.BufferState
-M.get_buf_state = function()
-  local binary = vim.bo.binary
-  local modifiable = vim.bo.modifiable
-  local modified = vim.bo.modified
-  local readonly = vim.bo.readonly
-  local filetype = vim.bo.filetype
+M.get_buf_state = function(buf)
+  buf = buf or 0
+  local binary = vim.bo[buf].binary
+  local modifiable = vim.bo[buf].modifiable
+  local modified = vim.bo[buf].modified
+  local readonly = vim.bo[buf].readonly
+  local filetype = vim.bo[buf].filetype
   return { binary, modifiable, modified, readonly, filetype }
 end
 
 --Sets the restorable state of the current buffer
----@param state nvim-elf-file.BufferState
-M.set_buf_state = function(state)
-  vim.bo.binary = state.binary
-  vim.bo.modifiable = state.modifiable
-  vim.bo.modified = state.modified
-  vim.bo.readonly = state.readonly
-  vim.bo.filetype = state.filetype
+---@param state nvim-elf-file.BufferState State to restore
+---@param buf? integer buffer id
+M.set_buf_state = function(state, buf)
+  buf = buf or 0
+  vim.bo[buf].binary = state.binary
+  vim.bo[buf].modifiable = state.modifiable
+  vim.bo[buf].modified = state.modified
+  vim.bo[buf].readonly = state.readonly
+  vim.bo[buf].filetype = state.filetype
 end
 
 ---Fills a buffer with the output of a command asynchronously
@@ -85,6 +89,7 @@ end
 M.toggle = function(cmd, args, ft, callback)
   local util = require("nvim-elf-file.util")
   local key = "is_" .. ft .. "_on"
+  local buf = vim.api.nvim_get_current_buf()
 
   -- `is_<ft>_on` variables are used to determine if it's in a "virtual" file
   -- mode like `toggle_bin` mode. Note that many vim functions clear `vim.b`,
@@ -99,7 +104,7 @@ M.toggle = function(cmd, args, ft, callback)
     util.log.trace("toggle " .. key .. " was false")
 
     -- Store previous state, temporarily make buffer writable
-    local buf_state = util.get_buf_state()
+    local buf_state = util.get_buf_state(buf)
     vim.bo.modifiable = true
     vim.bo.readonly = false
 
@@ -107,7 +112,6 @@ M.toggle = function(cmd, args, ft, callback)
 
     -- Set modified to false (because we just replaced (edited) buffer contents)
     vim.bo.swapfile = false
-    local buf = vim.api.nvim_get_current_buf()
     util.buf_from_cmd_async(buf, cmd, args, callback)
 
     vim.b.nvim_elf_file = {
@@ -124,7 +128,7 @@ M.toggle = function(cmd, args, ft, callback)
     -- Re-invokes this function, so we set [key] to nil first to no-op the run
     vim.cmd.edit("%")
 
-    util.set_buf_state(buf_state or {})
+    util.set_buf_state(buf_state or {}, buf)
     vim.b.nvim_elf_file = { [key] = false }
   else
     -- Commands like vim.cmd.edit(...) re-invoke this function with vim.b cleared.

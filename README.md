@@ -6,7 +6,7 @@
 --------------------------------------------------------------------------------
 
 A simple plugin to browse `.elf` and `bin` file contents in the style of
-[pi_zip].
+[pi_zip](https://neovim.io/doc/user/pi_zip.html).
 
 --------------------------------------------------------------------------------
 
@@ -21,9 +21,9 @@ TODO: gifs!
 Requires:
 
 - neovim `0.11.0`+
-- [plenary.nvim]
+- [plenary.nvim](https://github.com/nvim-lua/plenary.nvim)
 
-[lazy.nvim]
+[lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
 {
@@ -33,7 +33,7 @@ Requires:
 }
 ```
 
-[packer]:
+[packer](https://github.com/wbthomason/packer.nvim):
 
 ```lua
 {
@@ -46,7 +46,7 @@ Requires:
 }
 ```
 
-[mini.deps]:
+[mini.deps](https://github.com/echasnovski/mini.deps):
 
 ```lua
 add({
@@ -114,16 +114,16 @@ opts = {
 
 Some common machines include:
 
-| Machine (from `readelf`)        | Architecture         |
-| ------------------------------- | -------------------- |
-| `Advanced Micro Devices X86-64` | 64-bit x86 (x86\_64) |
-| `Intel 80386`                   | 32-bit x86           |
-| `ARM`                           | 32-bit ARM           |
-| `AArch64`                       | 64-bit ARM           |
-| `MIPS R3000`                    | MIPS                 |
-| `RISC-V`                        | RISC-V               |
-| `PowerPC`                       | PowerPC              |
-| `SPARC`                         | SPARC                |
+| Machine (from `readelf`)        | Architecture        |
+| ------------------------------- | ------------------- |
+| `Advanced Micro Devices X86-64` | 64-bit x86 (x86_64) |
+| `Intel 80386`                   | 32-bit x86          |
+| `ARM`                           | 32-bit ARM          |
+| `AArch64`                       | 64-bit ARM          |
+| `MIPS R3000`                    | MIPS                |
+| `RISC-V`                        | RISC-V              |
+| `PowerPC`                       | PowerPC             |
+| `SPARC`                         | SPARC               |
 
 > [!TIP]
 > You can set `vim.g.loaded_nvim_elf_file = true` to turn off the plugin entirely.
@@ -177,10 +177,3 @@ end
 ```
 
 --------------------------------------------------------------------------------
-
-[pi_zip]: https://neovim.io/doc/user/pi_zip.html
-[plenary.nvim]: https://github.com/nvim-lua/plenary.nvim
-[lazy.nvim]: https://github.com/folke/lazy.nvim
-[packer]: https://github.com/wbthomason/packer.nvim
-[mini.deps]: https://github.com/echasnovski/mini.deps
-[Plug]: https://github.com/junegunn/vim-plug

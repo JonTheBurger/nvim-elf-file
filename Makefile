@@ -23,19 +23,12 @@ clean: ## Deletes the build dir
 distclean: ## Resets the repo back to its state at checkout
 	git clean -xdff
 
+docs: ## Build the documentation
+	@printf '${BLU}=== documentation ===${RST}\n'
+	@panvimdoc --project-name nvim-elf-file --input-file README.md
+	@nvim -es -c 'helptags doc' -c 'q'
+
 check: format lint test cov ## Runs quality assurance steps
-
-test: ## Runs tests
-	@printf '${BLU}=== testing ===${RST}\n'
-	@nvim \
-		--headless \
-		--noplugin \
-		-u tests/minimal_init.lua \
-		-c "PlenaryBustedDirectory tests { minimal_init = 'tests/minimal_init.lua' }"
-
-cov: ## Generates test coverage
-	@printf '${BLU}=== coverage ===${RST}\n'
-	@luacov
 
 format: ## Reformats code
 	@printf '${BLU}=== formatting ===${RST}\n'
@@ -49,6 +42,14 @@ lint: ## Runs static analysis tools
 	@printf '${BLU}=== llscheck ===${RST}\n'
 	@VIMRUNTIME="`nvim --clean --headless --cmd 'lua io.write(os.getenv("VIMRUNTIME"))' --cmd 'quit'`" llscheck .
 
-docs: ## Build the documentation
-	@printf '${BLU}=== documentation ===${RST}\n'
-	@panvimdoc --project-name vim-elf-file --input-file README.md
+test: ## Runs tests
+	@printf '${BLU}=== testing ===${RST}\n'
+	@nvim \
+		--headless \
+		--noplugin \
+		-u tests/minimal_init.lua \
+		-c "PlenaryBustedDirectory tests { minimal_init = 'tests/minimal_init.lua' }"
+
+cov: ## Generates test coverage
+	@printf '${BLU}=== coverage ===${RST}\n'
+	@luacov
