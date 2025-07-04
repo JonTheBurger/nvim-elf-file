@@ -1,4 +1,5 @@
 local M = {}
+local tbl = require("plenary.tbl")
 
 ---Read-only default options.
 ---WARNING: When changing this table, also be sure to update `README.md` and `make docs`
@@ -49,6 +50,7 @@ M.defaults = {
   -- Verbosity of `vim.fn.stdpath("data") .. "/nvim-elf-file.log"`
   log_level = "info",
 }
+tbl.freeze(M.defaults)
 
 ---Options passed in by the user.
 ---@type nvim-elf-file.UserOptions
@@ -101,7 +103,7 @@ M.setup = function(opts)
   local ok, err = M.validate(config)
   if not ok then
     vim.notify(err, vim.log.levels.ERROR)
-    return
+    return err
   end
 
   M.options = Options:new(config)
@@ -110,10 +112,11 @@ end
 
 ---Checks that the user config is valid
 ---@param opts nvim-elf-file.UserOptions Plugin options
----@return boolean, string Success + error message
+---@return boolean, string? Success + error message
 M.validate = function(opts)
   local api = require("nvim-elf-file")
   local iter = require("plenary.iterators")
+  local tbl = require("plenary.tbl")
   local is_executable = function(exe)
     return type(exe) == "string" and vim.fn.executable(exe) == 1
   end
@@ -135,22 +138,22 @@ M.validate = function(opts)
 
     vim.validate("keymaps", opts.keymaps, "table")
     for key, value in pairs(opts.keymaps) do
-      vim.validate('keymaps["' .. tostring(key) .. '"]', key, "string")
-      vim.validate('keymaps["' .. tostring(key) .. '"] = "' .. tostring(value) .. '"', value, "string")
+      vim.validate("keymaps[" .. tostring(key) .. "]", key, "string")
+      vim.validate('keymaps["' .. tostring(key) .. '"] = ' .. tostring(value), value, "string")
       vim.validate('keymaps["' .. tostring(key) .. '"] = "' .. tostring(value) .. '"', value, function(k)
         return api.COMMANDS[k] ~= nil
-      end, '"' .. table.concat(api.COMMANDS, '"|"') .. '"')
+      end, '"' .. table.concat(iter.iter(api.COMMANDS):tolist(), '"|"') .. '"')
     end
 
     vim.validate("automatic", opts.automatic, "table")
     for key, value in pairs(opts.automatic) do
-      vim.validate('automatic["' .. tostring(key) .. '"]', key, "string")
-      vim.validate('automatic["' .. tostring(key) .. '"] = "' .. tostring(value) .. '"', value, "boolean")
+      vim.validate("automatic[" .. tostring(key) .. "]", key, "string")
+      vim.validate('automatic["' .. tostring(key) .. '"] = ' .. tostring(value), value, "boolean")
     end
 
     vim.validate("bufhidden", opts.bufhidden, function(k)
       return api.BUF_HIDDEN[k] ~= nil
-    end, '"' .. table.concat(api.BUF_HIDDEN, '"|"') .. '"')
+    end, '"' .. table.concat(iter.iter(api.BUF_HIDDEN):tolist(), '"|"') .. '"')
 
     vim.validate("log_level", opts.log_level, function(k)
       return iter.iter(api.LOG_LEVELS):any(function(e)
@@ -158,7 +161,7 @@ M.validate = function(opts)
       end)
     end, '"' .. table.concat(api.LOG_LEVELS, '"|"') .. '"')
   end)
-  return ok, tostring(err)
+  return ok, err
 end
 
 return M

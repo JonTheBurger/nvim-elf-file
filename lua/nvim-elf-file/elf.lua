@@ -143,7 +143,7 @@ M.parse_symbol = function(line)
     util.log.info("Couldn't find symbol id")
     return nil
   end
-  symbol.id = field
+  symbol.id = tonumber(field)
 
   line = line:sub(col + 1)
   -- "00000000000011c9    72 FUNC    GLOBAL DEFAULT   16 main"

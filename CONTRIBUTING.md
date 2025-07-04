@@ -51,7 +51,6 @@ For convenience, `make check` runs `format`, `lint`, `test`, and `cov`.
 
 ## Roadmap
 
-- tests
 - ci
 - gifs in docs
 - Hover hints: vim.lsp.util.open_floating_preview(), vim.api.nvim_open_with()

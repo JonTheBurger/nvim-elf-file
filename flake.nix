@@ -30,9 +30,7 @@
           ];
 
           shellHook = ''
-            luarocks --tree .luarocks install llscheck 0.7.0-1
-            luarocks --tree .luarocks install luacheck 1.2.0-1
-            luarocks --tree .luarocks install luacov 0.16.0-1
+            make setup
             export PATH="$PWD/.luarocks/bin:$PATH"
           '';
         };
