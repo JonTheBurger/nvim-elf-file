@@ -15,8 +15,8 @@ end
 vim.opt.rtp:append(".")
 
 vim.cmd("runtime plugin/plenary.vim")
-if not pcall(require("luacov")) then
-  print("Could not require('luacov'); disabling coverage")
+if not pcall(require, "luacov") then
+  print("Could not require('luacov'); disabling coverage\n")
 end
 require("nvim-elf-file")
 require("plenary.busted")

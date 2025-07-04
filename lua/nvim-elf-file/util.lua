@@ -87,49 +87,49 @@ end
 ---@param ft string FileType used to store buffer state in is_<ft>_on
 ---@param callback? fun(integer) Called with arg buffer id when cmd completes
 M.toggle = function(cmd, args, ft, callback)
+  local buf = vim.api.nvim_get_current_buf()
   local util = require("nvim-elf-file.util")
   local key = "is_" .. ft .. "_on"
-  local buf = vim.api.nvim_get_current_buf()
 
   -- `is_<ft>_on` variables are used to determine if it's in a "virtual" file
   -- mode like `toggle_bin` mode. Note that many vim functions clear `vim.b`,
   -- such as `vim.fn.edit`. To account for cases where `is_<ft>_on` is set to
   -- `nil`, a `nil` value is treated as a no-op by the toggle functions.
-  if vim.b.nvim_elf_file == nil then
+  if vim.b[buf].nvim_elf_file == nil then
     ---@type nvim-elf-file.BufferOpts
-    vim.b.nvim_elf_file = {}
+    vim.b[buf].nvim_elf_file = {}
   end
 
-  if vim.b.nvim_elf_file[key] == false then
+  if vim.b[buf].nvim_elf_file[key] == false then
     util.log.trace("toggle " .. key .. " was false")
 
     -- Store previous state, temporarily make buffer writable
     local buf_state = util.get_buf_state(buf)
-    vim.bo.modifiable = true
-    vim.bo.readonly = false
+    vim.bo[buf].modifiable = true
+    vim.bo[buf].readonly = false
 
     util.log.info(cmd .. " " .. table.concat(args, " "))
 
     -- Set modified to false (because we just replaced (edited) buffer contents)
-    vim.bo.swapfile = false
+    vim.bo[buf].swapfile = false
     util.buf_from_cmd_async(buf, cmd, args, callback)
 
-    vim.b.nvim_elf_file = {
+    vim.b[buf].nvim_elf_file = {
       buf_state = buf_state,
       [key] = true,
     }
-  elseif vim.b.nvim_elf_file[key] == true then
+  elseif vim.b[buf].nvim_elf_file[key] == true then
     util.log.trace("toggle " .. key .. " was true")
 
     -- Save buf_state as vim.cmd.edit will wipe out vim.b
-    local buf_state = vim.b.nvim_elf_file.buf_state
-    vim.b.nvim_elf_file = { [key] = nil }
+    local buf_state = vim.b[buf].nvim_elf_file.buf_state
+    vim.b[buf].nvim_elf_file = { [key] = nil }
 
     -- Re-invokes this function, so we set [key] to nil first to no-op the run
     vim.cmd.edit("%")
 
     util.set_buf_state(buf_state or {}, buf)
-    vim.b.nvim_elf_file = { [key] = false }
+    vim.b[buf].nvim_elf_file = { [key] = false }
   else
     -- Commands like vim.cmd.edit(...) re-invoke this function with vim.b cleared.
     -- This causes vim.b.nvim_elf_file[key] to be `nil`.

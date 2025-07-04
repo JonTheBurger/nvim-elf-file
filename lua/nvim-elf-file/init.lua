@@ -15,8 +15,9 @@ end
 
 ---Dumps ELF file symbol table in the current buffer, or restores the ELF file.
 M.toggle_elf = function()
-  if vim.b.nvim_elf_file == nil then
-    vim.b.nvim_elf_file = { is_elf_on = false }
+  local buf = vim.api.nvim_get_current_buf()
+  if vim.b[buf].nvim_elf_file == nil then
+    vim.b[buf].nvim_elf_file = { is_elf_on = false }
   end
 
   local api = require("nvim-elf-file")
@@ -44,8 +45,9 @@ end
 
 ---Dumps bin as hex in the current buffer, or restores the bin file.
 M.toggle_bin = function()
-  if vim.b.nvim_elf_file == nil then
-    vim.b.nvim_elf_file = { is_bin_on = false }
+  local buf = vim.api.nvim_get_current_buf()
+  if vim.b[buf].nvim_elf_file == nil then
+    vim.b[buf].nvim_elf_file = { is_bin_on = false }
   end
 
   local opt = require("nvim-elf-file.config").options
