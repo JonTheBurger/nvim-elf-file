@@ -34,10 +34,10 @@ M.toggle_elf = function()
       vim.fn.expand("%"),
     },
     "elf",
-    function(buf)
-      vim.bo[buf].syntax = "elf"
+    function(b)
+      vim.bo[b].syntax = "elf"
       for key, value in pairs(opt.keymaps) do
-        vim.keymap.set("n", key, "<Plug>(nvim-elf-file-" .. value .. ")", { buffer = buf, desc = api.COMMANDS[value] })
+        vim.keymap.set("n", key, "<Plug>(nvim-elf-file-" .. value .. ")", { buffer = b, desc = api.COMMANDS[value] })
       end
     end
   )
@@ -52,8 +52,8 @@ M.toggle_bin = function()
 
   local opt = require("nvim-elf-file.config").options
   local util = require("nvim-elf-file.util")
-  util.toggle(opt.xxd, { vim.fn.expand("%") }, "bin", function(buf)
-    vim.bo[buf].syntax = "xxd"
+  util.toggle(opt.xxd, { vim.fn.expand("%") }, "bin", function(b)
+    vim.bo[b].syntax = "xxd"
   end)
 end
 

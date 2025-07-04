@@ -6,7 +6,8 @@
 RED := \033[1;31m
 BLU := \033[36m
 RST := \033[0m
-export PATH := ${PWD}/.luarocks/bin:${PATH}
+export PATH := ${HOME}/.luarocks/bin:${PATH}
+# export LUAROCKS_CONFIG := ${PWD}/.config-nlua.lua
 
 #==============================================================================#
 # Goals
@@ -19,7 +20,7 @@ help: ## Shows this message
 	@cat ${MAKEFILE_LIST} | awk -F'(:|##|])\\s*' '/##\s*[A-Z_]+:.*$$/ {printf "  ${BLU}%-18s ${RED}%s]${RST} %s\n", $$2, $$3, $$4}'
 
 clean: ## Deletes the build dir
-	rm -rf .cache
+	rm -rf build
 
 distclean: ## Resets the repo back to its state at checkout
 	git clean -xdff
@@ -28,11 +29,9 @@ shell: ## Enter a development shell
 	nix develop
 
 setup: ## Once-per-clone setup
-	luarocks --tree .luarocks install llscheck 0.7.0-1
-	luarocks --tree .luarocks install luacheck 1.2.0-1
-	luarocks --tree .luarocks install luacov 0.16.0-1
-	# git clone https://github.com/nvim-lua/plenary.nvim .luarocks/plenary.nvim
-	# git -C .luarocks/plenary.nvim checkout
+	luarocks --lua-version 5.1 --local install llscheck 0.7.0-1
+	luarocks --lua-version 5.1 --local install luacheck 1.2.0-1
+	luarocks --lua-version 5.1 --local install plenary.nvim scm-1
 
 docs: ## Build the documentation
 	@printf '${BLU}=== documentation ===${RST}\n'
@@ -43,23 +42,19 @@ check: format lint test cov ## Runs quality assurance steps
 
 format: ## Reformats code
 	@printf '${BLU}=== formatting ===${RST}\n'
-	@stylua lua plugin tests
+	@stylua lua plugin spec
 
 lint: ## Runs static analysis tools
 	@printf '${BLU}=== stylua ===${RST}\n'
-	@stylua lua plugin tests --color always --check
+	@stylua lua plugin spec --color always --check
 	@printf '${BLU}=== luacheck ===${RST}\n'
-	@luacheck lua plugin tests
+	@luacheck lua plugin spec
 	@printf '${BLU}=== llscheck ===${RST}\n'
 	@VIMRUNTIME="`nvim --clean --headless --cmd 'lua io.write(os.getenv("VIMRUNTIME"))' --cmd 'quit'`" llscheck .
 
 test: ## Runs tests
 	@printf '${BLU}=== testing ===${RST}\n'
-	@nvim \
-		--headless \
-		--noplugin \
-		-u tests/minimal_init.lua \
-		-c "PlenaryBustedDirectory tests { minimal_init = 'tests/minimal_init.lua' }"
+	@$(shell luarocks path --no-bin) && busted
 
 cov: ## Generates test coverage
 	@printf '${BLU}=== coverage ===${RST}\n'

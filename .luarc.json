@@ -1,14 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
   "diagnostics.libraryFiles": "Disable",
-  "runtime.version": "LuaJIT",
   "workspace.checkThirdParty": "Disable",
   "workspace.ignoreDir": [
-    ".cache",
-    ".luarocks"
+    "build"
   ],
   "workspace.library": [
-    "$PWD/.cache/plenary/lua",
+    "${env:HOME}/.luarocks/share/lua/5.1/busted",
+    "${env:HOME}/.luarocks/share/lua/5.1/plenary",
     "$VIMRUNTIME/lua"
   ]
 }

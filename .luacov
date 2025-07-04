@@ -1,10 +1,12 @@
 reporter = "html"
-reportfile = ".cache/luacov.report.html"
-statsfile = ".cache/luacov.stats"
+reportfile = "build/luacov.report.html"
+statsfile = "build/luacov.stats"
 include = "lua/"
 exclude = {
-  ".luarocks/",
   ".cache/",
+  ".luarocks/",
+  "/usr/",
+  "build/",
   "spec/",
   "tests/",
   "vim/",

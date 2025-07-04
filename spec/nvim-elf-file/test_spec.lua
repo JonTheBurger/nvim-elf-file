@@ -1,3 +1,8 @@
+vim.fn.mkdir("build", "p")
+if not pcall(require, "luacov") then
+  print("Could not require('luacov'); disabling coverage\n")
+end
+
 local api = require("nvim-elf-file")
 local config = require("nvim-elf-file.config")
 local elf = require("nvim-elf-file.elf")

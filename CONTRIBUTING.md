@@ -57,6 +57,7 @@ For convenience, `make check` runs `format`, `lint`, `test`, and `cov`.
 - cache readelf/objdump per-buffer
 - set cursor position as byte index when toggling binary
 - bin file search
+- revisit flake
 
 --------------------------------------------------------------------------------
 

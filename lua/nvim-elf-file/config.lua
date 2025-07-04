@@ -102,7 +102,7 @@ M.setup = function(opts)
 
   local ok, err = M.validate(config)
   if not ok then
-    vim.notify(err, vim.log.levels.ERROR)
+    vim.notify(tostring(err), vim.log.levels.ERROR)
     return err
   end
 
@@ -116,7 +116,6 @@ end
 M.validate = function(opts)
   local api = require("nvim-elf-file")
   local iter = require("plenary.iterators")
-  local tbl = require("plenary.tbl")
   local is_executable = function(exe)
     return type(exe) == "string" and vim.fn.executable(exe) == 1
   end

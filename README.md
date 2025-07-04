@@ -29,7 +29,13 @@ Requires:
 {
   "jontheburger/nvim-elf-file",
   dependencies = { "nvim-lua/plenary.nvim" },
+  ---@type nvim-elf-file.UserOptions
   opts = {},
+  keys = {
+    { "<leader>Ee", "<Plug>(nvim-elf-file-toggle-elf)", desc = "Toggle Elf View" },
+    { "<leader>Eb", "<Plug>(nvim-elf-file-toggle-bin)", desc = "Toggle Bin View" },
+  },
+  cmd = { "ElfFile" },
 }
 ```
 
@@ -42,6 +48,8 @@ Requires:
   opt = true,
   config = function()
     require("nvim-elf-file").setup({})
+    vim.keymap.set("n", "<leader>Ee", "<Plug>(nvim-elf-file-toggle-elf)", { noremap = true, desc = "Toggle Elf View", })
+    vim.keymap.set("n", "<leader>Eb", "<Plug>(nvim-elf-file-toggle-bin)", { noremap = true, desc = "Toggle Bin View", })
   end
 }
 ```
@@ -49,6 +57,7 @@ Requires:
 [mini.deps](https://github.com/echasnovski/mini.deps):
 
 ```lua
+local add = MiniDeps.add
 add({
   source = "jontheburger/nvim-elf-file",
   depends = { "nvim-lua/plenary.nvim" },
@@ -144,8 +153,8 @@ This plugin also provides `<Plug>(nvim-elf-file-<command>)` mappings:
 
 | Mapping                            | Command              |
 | ---------------------------------- | -------------------- |
-| `<Plug>(nvim-elf-file-toggle-bin)` | `ElfFile toggle_bin` |
-| `<Plug>(nvim-elf-file-toggle-elf)` | `ElfFile toggle_elf` |
+| `<Plug>(nvim-elf-file-toggle-bin)` | `ElfFile toggle bin` |
+| `<Plug>(nvim-elf-file-toggle-elf)` | `ElfFile toggle elf` |
 | `<Plug>(nvim-elf-file-dump)`       | `ElfFile dump`       |
 
 This plugin also keeps the lua API located in `require("nvim-elf-file")` stable:

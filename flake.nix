@@ -31,7 +31,6 @@
 
           shellHook = ''
             make setup
-            export PATH="$PWD/.luarocks/bin:$PATH"
           '';
         };
       });
