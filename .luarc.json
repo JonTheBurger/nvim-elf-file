@@ -3,11 +3,14 @@
   "diagnostics.libraryFiles": "Disable",
   "workspace.checkThirdParty": "Disable",
   "workspace.ignoreDir": [
+    ".cache",
+    ".luarocks",
     "build"
   ],
   "workspace.library": [
     "${env:HOME}/.luarocks/share/lua/5.1/busted",
     "${env:HOME}/.luarocks/share/lua/5.1/plenary",
+    "${env:PWD}/.cache/plenary/lua",
     "$VIMRUNTIME/lua"
   ]
 }

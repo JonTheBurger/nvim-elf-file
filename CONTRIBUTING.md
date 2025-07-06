@@ -13,11 +13,24 @@ develop.
 
 ## Setup
 
-This repo supplies dependencies via [nix flake]. To open a nix shell, run:
+This repo supplies dependencies via [nix flake]. To open an interactive nix
+shell, run:
 
 ```bash
-nix develop
+make shell
 ```
+
+Once per-clone, you must use `luarocks` to install 3rd party dependencies to
+`${PWD}/.luarocks`. The `make setup` command is provided to do so for
+convenience:
+
+```bash
+make setup
+```
+
+> [!WARNING]
+> Run `make clean` when switching between a `nix`-based `.luarocks` dir and a
+> host-machine `.luarocks` dir.
 
 Then use the `Makefile` to execute quality assurance commands:
 
@@ -27,18 +40,24 @@ Usage:
   make [<VARIABLE>=<value>] <goal>
 Targets:
   help               Shows this message
-  clean              Deletes the build dir
+  clean              Deletes artifacts
   distclean          Resets the repo back to its state at checkout
-  docs               Build the documentation
+  shell              Enter a shell containing dev dependencies
+  setup              Once-per-clone setup
   check              Runs quality assurance steps
   format             Reformats code
   lint               Runs static analysis tools
   test               Runs tests
-  cov                Generates test coverage
+  docs               Build the documentation
 Variables:
+  IN_NIX             [0] Set to 1 to run a command in the nix shell (make clean between nix and host shells)
 ```
 
-For convenience, `make check` runs `format`, `lint`, `test`, and `cov`.
+> [!NOTE]
+> Any of the non-`shell` `Makefile` commands can use the nix shell by adding
+> `IN_NIX=1` to the command line.
+
+For convenience, `make check` runs `format`, `lint`, and `test`.
 
 ## Notes
 
@@ -57,7 +76,6 @@ For convenience, `make check` runs `format`, `lint`, `test`, and `cov`.
 - cache readelf/objdump per-buffer
 - set cursor position as byte index when toggling binary
 - bin file search
-- revisit flake
 
 --------------------------------------------------------------------------------
 

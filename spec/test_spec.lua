@@ -1,7 +1,8 @@
-vim.fn.mkdir("build", "p")
-if not pcall(require, "luacov") then
-  print("Could not require('luacov'); disabling coverage\n")
-end
+require("luacov")
+-- if jit then jit.off(true, true) end
+-- require("luacov")
+-- require("luacov.runner")(".luacov")
+-- vim.opt.rtp:append(".")
 
 local api = require("nvim-elf-file")
 local config = require("nvim-elf-file.config")

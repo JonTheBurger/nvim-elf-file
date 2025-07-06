@@ -1,0 +1,26 @@
+---
+on: [push, pull_request]
+name: check
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    name: qa
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v23
+
+      - name: Bootstrap Dev Env
+        uses: nicknovitski/nix-develop@v1
+
+      - name: Setup Repo
+        run: make setup
+
+      - name: Lint
+        run: make lint
+
+      - name: Test
+        run: make test
