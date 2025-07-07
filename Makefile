@@ -12,14 +12,19 @@ LUAROCKS := luarocks --lua-version 5.1 --tree ${MAKEFILE_DIR}.luarocks
 
 ## IN_NIX: [0] Set to 1 to run a command in the nix shell (make clean between nix and host shells)
 ifeq ($(IN_NIX),1)
-	.SHELLFLAGS := develop --command sh -ce
+	.SHELLFLAGS := develop --command bash -ce
 	SHELL := nix
+endif
+
+# This fixes luasystem not being able to find RT_DIR upon install
+ifdef RT_DIR
+	LUAROCKS += RT_DIR="${RT_DIR}"
 endif
 
 #==============================================================================#
 # Environment
 #==============================================================================#
-export PATH := ${MAKEFILE_LIST}.luarocks/bin:${PATH}
+export PATH := ${MAKEFILE_DIR}.luarocks/bin:${PATH}
 export VIMRUNTIME = $(shell nvim --clean --headless --cmd 'lua io.write(os.getenv("VIMRUNTIME"))' --cmd 'quit')
 
 #==============================================================================#
@@ -27,10 +32,13 @@ export VIMRUNTIME = $(shell nvim --clean --headless --cmd 'lua io.write(os.geten
 #==============================================================================#
 help: ## Shows this message
 	@printf '${RED}Usage:\n  ${RST}${BLU}make [<VARIABLE>=<value>] <goal>\n${RST}'
-	@printf '${RED}Targets:\n${RST}'
-	@cat ${MAKEFILE_LIST} | awk -F'(:|##|])\\s*' '/[^:]*:[^:]+##\s.*$$/ {printf "  ${BLU}%-18s${RST} %s\n", $$1, $$3}'
-	@printf '${RED}Variables:\n${RST}'
-	@cat ${MAKEFILE_LIST} | awk -F'(:|##|])\\s*' '/##\s*[A-Z_]+:.*$$/ {printf "  ${BLU}%-18s ${RED}%s]${RST} %s\n", $$2, $$3, $$4}'
+	printf '${RED}Targets:\n${RST}'
+	cat ${MAKEFILE_LIST} | awk -F'(:|##|])\\s*' '/[^:]*:[^:]+##\s.*$$/ {printf "  ${BLU}%-18s${RST} %s\n", $$1, $$3}'
+	printf '${RED}Variables:\n${RST}'
+	cat ${MAKEFILE_LIST} | awk -F'(:|##|])\\s*' '/##\s*[A-Z_]+:.*$$/ {printf "  ${BLU}%-18s ${RED}%s]${RST} %s\n", $$2, $$3, $$4}'
+
+echo:
+	echo ${PATH}
 
 clean: ## Deletes artifacts
 	rm -rf .luarocks

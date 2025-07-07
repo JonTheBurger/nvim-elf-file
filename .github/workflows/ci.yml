@@ -5,7 +5,7 @@ name: check
 jobs:
   check:
     runs-on: ubuntu-latest
-    name: qa
+    name: QA
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -16,11 +16,5 @@ jobs:
       - name: Bootstrap Dev Env
         uses: nicknovitski/nix-develop@v1
 
-      - name: Setup Repo
-        run: make setup
-
-      - name: Lint
-        run: make lint
-
-      - name: Test
-        run: make test
+      - name: Check
+        run: make setup check

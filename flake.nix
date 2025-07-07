@@ -25,19 +25,19 @@
               findutils
               gawk
               gcc
-              pkg-config
-              glibc
               git
+              glibc
               gnumake
+              lua-language-server
               lua5_1
               luarocks
               neovim
               panvimdoc
+              pkg-config
+              stylua
             ];
-            # This fixes luasystem  not being able to find RT_DIR upon install
             shellHook = ''
-              luarocks() { command luarocks "$@" RT_DIR="${pkgs.glibc.out}"; }
-              export -f luarocks
+              export RT_DIR="${pkgs.glibc.out}"
             '';
           };
         };

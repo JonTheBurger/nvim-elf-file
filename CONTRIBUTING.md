@@ -54,8 +54,8 @@ Variables:
 ```
 
 > [!NOTE]
-> Any of the non-`shell` `Makefile` commands can use the nix shell by adding
-> `IN_NIX=1` to the command line.
+> All `Makefile` commands except `setup` and `shell` can use the nix shell by
+> adding `IN_NIX=1` to the command line.
 
 For convenience, `make check` runs `format`, `lint`, and `test`.
 
