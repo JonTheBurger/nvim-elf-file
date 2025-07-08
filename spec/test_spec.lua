@@ -1,8 +1,5 @@
+---@diagnostic disable: undefined-global
 require("luacov")
--- if jit then jit.off(true, true) end
--- require("luacov")
--- require("luacov.runner")(".luacov")
--- vim.opt.rtp:append(".")
 
 local api = require("nvim-elf-file")
 local config = require("nvim-elf-file.config")

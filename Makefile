@@ -7,24 +7,30 @@
 RED := \033[1;31m
 BLU := \033[36m
 RST := \033[0m
-MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-LUAROCKS := luarocks --lua-version 5.1 --tree ${MAKEFILE_DIR}.luarocks
-
-## IN_NIX: [0] Set to 1 to run a command in the nix shell (make clean between nix and host shells)
-ifeq ($(IN_NIX),1)
-	.SHELLFLAGS := develop --command bash -ce
-	SHELL := nix
-endif
+MAKEFILE_DIR := $(subst ${CURDIR}/,,$(dir $(abspath $(lastword $(MAKEFILE_LIST))))).
+LUAROCKS := luarocks --lua-version 5.1 --tree ${MAKEFILE_DIR}/.luarocks
 
 # This fixes luasystem not being able to find RT_DIR upon install
 ifdef RT_DIR
 	LUAROCKS += RT_DIR="${RT_DIR}"
 endif
 
+## IN_NIX: [0] Set to 1 to run a command in the nix shell
+ifeq ($(IN_NIX),1)
+	.SHELLFLAGS := develop --ignore-environment --command bash -ce
+	SHELL := nix
+endif
+
+## IN_DOCKER: [0] Set to 1 to run a command in a docker container
+ifeq ($(IN_DOCKER),1)
+	.SHELLFLAGS := run --rm -it -v${MAKEFILE_DIR}:/src nvim-elf-file:latest
+	SHELL := docker
+endif
+
 #==============================================================================#
 # Environment
 #==============================================================================#
-export PATH := ${MAKEFILE_DIR}.luarocks/bin:${PATH}
+export PATH := ${MAKEFILE_DIR}/.luarocks/bin:${PATH}
 export VIMRUNTIME = $(shell nvim --clean --headless --cmd 'lua io.write(os.getenv("VIMRUNTIME"))' --cmd 'quit')
 
 #==============================================================================#
@@ -37,11 +43,8 @@ help: ## Shows this message
 	printf '${RED}Variables:\n${RST}'
 	cat ${MAKEFILE_LIST} | awk -F'(:|##|])\\s*' '/##\s*[A-Z_]+:.*$$/ {printf "  ${BLU}%-18s ${RED}%s]${RST} %s\n", $$2, $$3, $$4}'
 
-echo:
-	echo ${PATH}
-
 clean: ## Deletes artifacts
-	rm -rf .luarocks
+	@rm -rf luacov.stats luacov.report.html src
 
 distclean: ## Resets the repo back to its state at checkout
 	git clean -xdff
@@ -50,13 +53,16 @@ shell: ## Enter a shell containing dev dependencies
 	nix develop
 
 setup: ## Once-per-clone setup
-	${LUAROCKS} install busted 2.2.0-1
-	${LUAROCKS} install llscheck 0.7.0-1
-	${LUAROCKS} install luacheck 1.2.0-1
-	${LUAROCKS} install nlua 0.3.2-1
-	${LUAROCKS} install plenary.nvim scm-1
+	${LUAROCKS} install busted 2.2.0-1 --force
+	${LUAROCKS} install llscheck 0.7.0-1 --force
+	${LUAROCKS} install luacheck 1.2.0-1 --force
+	${LUAROCKS} install luacov 0.16.0-1 --force
+	${LUAROCKS} install nlua 0.3.2-1 --force
+	${LUAROCKS} install plenary.nvim scm-1 --force
+	# Required for nix
+	ln -sf ./.luarocks/lib/luarocks/rocks-*/luacov/*/src/ src
 
-check: format lint test ## Runs quality assurance steps
+check: format lint test cov ## Runs quality assurance steps
 
 format: ## Reformats code
 	@printf '${BLU}=== formatting ===${RST}\n'
@@ -68,13 +74,26 @@ lint: ## Runs static analysis tools
 	printf '${BLU}=== luacheck ===${RST}\n'
 	luacheck lua plugin spec
 	printf '${BLU}=== llscheck ===${RST}\n'
-	VIMRUNTIME=${VIMRUNTIME} llscheck .
+	$(shell ${LUAROCKS} path) && bVIMRUNTIME=${VIMRUNTIME} llscheck .
+
+echo:
+	@echo ${VIMRUNTIME}
 
 test: ## Runs tests
 	@printf '${BLU}=== testing ===${RST}\n'
 	$(shell ${LUAROCKS} path) && busted
 
+cov: ## Generates test coverage
+	@printf '${BLU}=== coverage ===${RST}\n'
+	$(shell ${LUAROCKS} path) && luacov
+
 docs: ## Build the documentation
 	@printf '${BLU}=== documentation ===${RST}\n'
 	panvimdoc --project-name nvim-elf-file --input-file README.md
 	nvim -es -c 'helptags doc' -c 'q'
+
+docker.build: ## Builds the docker image
+	docker build . -t nvim-elf-file
+
+docker.run: docker.build ## Runs the docker image
+	docker run --rm -it nvim-elf-file

@@ -3,11 +3,7 @@ reportfile = "luacov.report.html"
 statsfile = "luacov.stats"
 include = "lua"
 exclude = {
---  ".cache/",
---  ".luarocks/",
---  "/usr/",
---  "build/",
---  "spec/",
---  "tests/",
+  ".luarocks/",
+  "spec/",
   "vim/",
 }

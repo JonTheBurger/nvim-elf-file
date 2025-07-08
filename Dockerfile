@@ -1,11 +1,9 @@
 FROM nixos/nix
-RUN mkdir -p /flake && \
-    mkdir -p /etc/nix && \
+RUN mkdir -p /etc/nix && \
     echo "experimental-features = nix-command flakes" > /etc/nix/nix.conf
-WORKDIR /flake
-COPY flake.nix /flake/flake.nix
-COPY flake.lock /flake/flake.lock
+COPY flake.nix flake.lock /src/
+WORKDIR /src
 RUN nix develop --impure --command true
-WORKDIR /app
+COPY . /src
 ENTRYPOINT ["nix", "develop", "--impure", "--command"]
 CMD ["bash"]

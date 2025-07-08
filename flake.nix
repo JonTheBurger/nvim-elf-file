@@ -34,7 +34,9 @@
               neovim
               panvimdoc
               pkg-config
+              ripgrep
               stylua
+              xxd
             ];
             shellHook = ''
               export RT_DIR="${pkgs.glibc.out}"
