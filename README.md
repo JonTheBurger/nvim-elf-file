@@ -73,7 +73,7 @@ The following the default `opts`:
 
 ```lua
 ---@type nvim-elf-file.UserOptions
-opts = {
+M.defaults = {
   -- Path to single readelf program name / executable path,
   -- readelf = "/usr/bin/readelf",
 
@@ -97,7 +97,20 @@ opts = {
   end,
 
   -- Name of binary dumping program (not machine-dependent)
-  xxd = "xxd",
+  xxd = {
+    -- Name of or path to xxd executable
+    executable = "xxd",
+    -- Number of bytes to group in a column (2 nibbles per-byte)
+    bytes_per_column = 2,
+    -- Number of bytes to group in a line ("auto" to fill the line)
+    bytes_per_line = "auto",
+    -- How to display the address ("hexadecimal" or "decimal")
+    address_format = "hexadecimal",
+    -- Replace consecutive lines of all '0' with a '*'
+    skip_zeros = false,
+    -- Use uppercase letters for hexadecimal
+    uppercase = false,
+  },
 
   -- nvim-elf-file buffer-specific keymaps.
   -- Each entry is a <Plug>(nvim-elf-file-<command>)

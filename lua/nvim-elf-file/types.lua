@@ -5,11 +5,28 @@
 ---@alias nvim-elf-file.Command '"toggle-elf"' | '"toggle-bin"' | '"dump"' -- | '"hover"' | '"search"'
 ---@alias nvim-elf-file.BufHidden '""' | '"hide"' | '"unload"' | '"delete"' | '"wipe"'
 ---@alias nvim-elf-file.LogLevel '"trace"' | '"debug"' | '"info"' | '"warn"' | '"error"' | '"critical"'
+---@alias nvim-elf-file.Radix '"hexadecimal"' | '"decimal"'
+
+---@class nvim-elf-file.XxdUserOptions User configurable xxd options
+---@field executable? string Name of or path to xxd executable
+---@field bytes_per_column? integer Number of bytes to group in a column (2 nibbles per-byte)
+---@field bytes_per_line? integer | '"auto"' Number of bytes to group in a line ("auto" to fill the line)
+---@field address_format? nvim-elf-file.Radix How to display the address ("hexadecimal" or "decimal")
+---@field skip_zeros? boolean Replace consecutive lines of all '0' with a '*'
+---@field uppercase? boolean Use uppercase letters for hexadecimal
+
+---@class nvim-elf-file.XxdOptions xxd options
+---@field executable string Name of or path to xxd executable
+---@field bytes_per_column integer Number of bytes to group in a column (2 nibbles per-byte)
+---@field bytes_per_line integer | '"auto"' Number of bytes to group in a line ("auto" to fill the line)
+---@field address_format nvim-elf-file.Radix How to display the address ("hexadecimal" or "decimal")
+---@field skip_zeros boolean Replace consecutive lines of all '0' with a '*'
+---@field uppercase boolean Use uppercase letters for hexadecimal
 
 ---@class nvim-elf-file.UserOptions User configurable options
 ---@field readelf? string|fun(string): string Name/path of readelf program or a function taking in a readelf machine and returning a readelf program ($PATH is searched)
 ---@field objdump? string|fun(string): string Name/path of objdump program or a function taking in a objdump machine and returning a objdump program ($PATH is searched)
----@field xxd? string Name/path of xxd program ($PATH is searched)
+---@field xxd? nvim-elf-file.XxdUserOptions xxd settings
 ---@field keymaps? table[string, nvim-elf-file.Command] plugin buffer-specific key mappings
 ---@field automatic? table[string, boolean] Disable automatic toggle per-filetype
 ---@field bufhidden? nvim-elf-file.BufHidden Action to take when exiting a section/symbol dump buffer
@@ -19,7 +36,7 @@
 ---@field user nvim-elf-file.UserOptions Original user options + defaults
 ---@field readelf fun(string): string Function to find readelf based on machine name
 ---@field objdump fun(string): string Function to find objdump based on machine name
----@field xxd string xxd program
+---@field xxd nvim-elf-file.XxdOptions xxd settings
 ---@field keymaps table[string, nvim-elf-file.Command] plugin buffer-specific key mappings
 ---@field automatic table[string, boolean] Disable automatic toggle_elf / toggle_bin
 ---@field bufhidden nvim-elf-file.BufHidden Action to take when exiting a section/symbol dump buffer

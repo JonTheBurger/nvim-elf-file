@@ -52,7 +52,59 @@ M.toggle_bin = function()
 
   local opt = require("nvim-elf-file.config").options
   local util = require("nvim-elf-file.util")
-  util.toggle(opt.xxd, { vim.fn.expand("%") }, "bin", function(b)
+
+  -- Given an xxd line like the following, determine how many columns to use:
+  -- 00000000: 0201 0100 0000 0000 0000 0000 0300 3e00 0100 0000 6010 0000 0000 0000 40  ..............>.....`.......@
+  -- ^~~~~~~~~^ addr_len = address + colon + space (8 + 1 + 1)
+  --            +1 space before the text ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+  --           ^~~^ group = 2 bytes
+  --           ^~~~^ group_len = nibbles + space +  (2 bytes * 2 nibbles + 1)
+  --            +1 for every group                                                       ^^
+
+  local group = opt.xxd.bytes_per_column
+
+  local cols = 16
+  util.log.debug("xxd calculations: ")
+  if opt.xxd.bytes_per_line == "auto" then
+    local win = vim.api.nvim_get_current_win()
+    local win_info = vim.fn.getwininfo(win)[1]
+
+    local width = win_info.width - win_info.textoff
+    util.log.debug("  window width: " .. tostring(width))
+
+    -- 8 digits + colon + space + space before text
+    local header_width = 8 + 1 + 1 + 1
+    util.log.debug("  header width: " .. tostring(header_width))
+
+    width = width - header_width
+    util.log.debug("  remaining width: " .. tostring(width))
+
+    -- groups of bytes * 2 nibbles + 1 space separator + 1 char per byte in group
+    local group_len = group * 2 + 1 + group
+    util.log.debug("  group length: " .. tostring(group_len))
+
+    cols = width / group_len
+    util.log.debug("  columns: " .. tostring(cols))
+  else
+    ---@diagnostic disable-next-line=param-type-mismatch
+    cols = opt.xxd.bytes_per_line
+  end
+  -- xxd columns are the number of bytes to display, so scale by groups (bytes) in the line
+  cols = math.floor(cols) * group ---@diagnostic disable-line=param-type-mismatch
+  util.log.debug("  rounded columns: " .. tostring(cols))
+
+  local args = { "-g", tostring(group), "-c", tostring(cols), vim.fn.expand("%") }
+  if opt.xxd.address_format == "decimal" then
+    table.insert(args, 1, "-d")
+  end
+  if opt.xxd.skip_zeros then
+    table.insert(args, 1, "-a")
+  end
+  if opt.xxd.uppercase then
+    table.insert(args, 1, "-u")
+  end
+
+  util.toggle(opt.xxd.executable, args, "bin", function(b)
     vim.bo[b].syntax = "xxd"
   end)
 end
