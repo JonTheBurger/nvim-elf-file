@@ -138,4 +138,13 @@ M.toggle = function(cmd, args, ft, callback)
   end
 end
 
+---Gets the editable width of the current window in characters
+---@return integer width of the window that is usable
+M.get_win_width = function()
+  local win = vim.api.nvim_get_current_win()
+  local win_info = vim.fn.getwininfo(win)[1]
+  local width = win_info.width - win_info.textoff
+  return width
+end
+
 return M

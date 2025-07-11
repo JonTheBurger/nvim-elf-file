@@ -47,7 +47,12 @@ M.defaults = {
   -- Each entry is a <Plug>(nvim-elf-file-<command>)
   -- See list of commands in "Usage" below
   keymaps = {
-    ["<cr>"] = "dump",
+    ["?"] = "help",
+    ["<CR>"] = "dump",
+    ["<S-K>"] = "hover",
+    ["<F2>"] = "search-text",
+    ["<F3>"] = "search-bin",
+    ["<F5>"] = "refresh",
   },
 
   -- Set to false to disable automatic conversion of the filetype's buffer
@@ -146,7 +151,8 @@ M.validate = function(opts)
       vim.validate("objdump()", opts.objdump(""), is_executable, "executable default objdump")
     end
 
-    vim.validate("xxd", opts.xxd, is_executable, "executable xxd")
+    -- TODO: Update
+    -- vim.validate("xxd", opts.xxd, is_executable, "executable xxd")
 
     vim.validate("keymaps", opts.keymaps, "table")
     for key, value in pairs(opts.keymaps) do

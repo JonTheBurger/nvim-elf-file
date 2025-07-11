@@ -60,6 +60,9 @@ if not vim.g.loaded_nvim_elf_file then
     end,
   })
 
+  vim.keymap.set("n", "<Plug>(nvim-elf-file-help)", function()
+    require("nvim-elf-file").help()
+  end, { noremap = true, desc = api.COMMANDS["refresh"] })
   vim.keymap.set("n", "<Plug>(nvim-elf-file-toggle-elf)", function()
     require("nvim-elf-file").toggle_elf()
   end, { noremap = true, desc = api.COMMANDS["toggle-elf"] })
@@ -69,18 +72,18 @@ if not vim.g.loaded_nvim_elf_file then
   vim.keymap.set("n", "<Plug>(nvim-elf-file-dump)", function()
     require("nvim-elf-file").dump()
   end, { noremap = true, desc = api.COMMANDS["dump"] })
-  -- vim.keymap.set(
-  --   "n",
-  --   "<Plug>(nvim-elf-file-hover)",
-  --   function() require("nvim-elf-file").hover() end,
-  --   { noremap = true, desc = elf.COMMANDS["hover"] }
-  -- )
-  -- vim.keymap.set(
-  --   "n",
-  --   "<Plug>(nvim-elf-file-search)",
-  --   function() require("nvim-elf-file").search() end,
-  --   { noremap = true, desc = elf.COMMANDS["search"] }
-  -- )
+  vim.keymap.set("n", "<Plug>(nvim-elf-file-hover)", function()
+    require("nvim-elf-file").hover()
+  end, { noremap = true, desc = api.COMMANDS["hover"] })
+  vim.keymap.set("n", "<Plug>(nvim-elf-file-search-text)", function()
+    require("nvim-elf-file").search_text()
+  end, { noremap = true, desc = api.COMMANDS["search-text"] })
+  vim.keymap.set("n", "<Plug>(nvim-elf-file-search-bin)", function()
+    require("nvim-elf-file").search_binary()
+  end, { noremap = true, desc = api.COMMANDS["search-bin"] })
+  vim.keymap.set("n", "<Plug>(nvim-elf-file-refresh)", function()
+    require("nvim-elf-file").refresh()
+  end, { noremap = true, desc = api.COMMANDS["refresh"] })
 end
 
 vim.g.loaded_nvim_elf_file = true

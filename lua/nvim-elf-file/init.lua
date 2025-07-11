@@ -13,6 +13,17 @@ M.is_elf_file = function(file)
   return require("nvim-elf-file.elf").is_elf_file(file)
 end
 
+---Show help
+M.help = function()
+  local api = require("nvim-elf-file")
+  local opt = require("nvim-elf-file.config").options
+  local lines = {}
+  for key, cmd in pairs(opt.keymaps) do
+    lines[#lines + 1] = '["' .. key .. '"] = "' .. tostring(api.COMMANDS[cmd] .. '"')
+  end
+  vim.lsp.util.open_floating_preview(lines, "lua", { title = " Keymap: ", border = "rounded", width = 80, height = 10 })
+end
+
 ---Dumps ELF file symbol table in the current buffer, or restores the ELF file.
 M.toggle_elf = function()
   local buf = vim.api.nvim_get_current_buf()
@@ -50,48 +61,15 @@ M.toggle_bin = function()
     vim.b[buf].nvim_elf_file = { is_bin_on = false }
   end
 
+  -- Make xxd command
   local opt = require("nvim-elf-file.config").options
-  local util = require("nvim-elf-file.util")
-
-  -- Given an xxd line like the following, determine how many columns to use:
-  -- 00000000: 0201 0100 0000 0000 0000 0000 0300 3e00 0100 0000 6010 0000 0000 0000 40  ..............>.....`.......@
-  -- ^~~~~~~~~^ addr_len = address + colon + space (8 + 1 + 1)
-  --            +1 space before the text ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
-  --           ^~~^ group = 2 bytes
-  --           ^~~~^ group_len = nibbles + space +  (2 bytes * 2 nibbles + 1)
-  --            +1 for every group                                                       ^^
-
   local group = opt.xxd.bytes_per_column
 
-  local cols = 16
-  util.log.debug("xxd calculations: ")
-  if opt.xxd.bytes_per_line == "auto" then
-    local win = vim.api.nvim_get_current_win()
-    local win_info = vim.fn.getwininfo(win)[1]
+  local util = require("nvim-elf-file.util")
+  local width = util.get_win_width()
 
-    local width = win_info.width - win_info.textoff
-    util.log.debug("  window width: " .. tostring(width))
-
-    -- 8 digits + colon + space + space before text
-    local header_width = 8 + 1 + 1 + 1
-    util.log.debug("  header width: " .. tostring(header_width))
-
-    width = width - header_width
-    util.log.debug("  remaining width: " .. tostring(width))
-
-    -- groups of bytes * 2 nibbles + 1 space separator + 1 char per byte in group
-    local group_len = group * 2 + 1 + group
-    util.log.debug("  group length: " .. tostring(group_len))
-
-    cols = width / group_len
-    util.log.debug("  columns: " .. tostring(cols))
-  else
-    ---@diagnostic disable-next-line=param-type-mismatch
-    cols = opt.xxd.bytes_per_line
-  end
-  -- xxd columns are the number of bytes to display, so scale by groups (bytes) in the line
-  cols = math.floor(cols) * group ---@diagnostic disable-line=param-type-mismatch
-  util.log.debug("  rounded columns: " .. tostring(cols))
+  local bin = require("nvim-elf-file.bin")
+  local cols = bin.get_bytes_per_line(group, width)
 
   local args = { "-g", tostring(group), "-c", tostring(cols), vim.fn.expand("%") }
   if opt.xxd.address_format == "decimal" then
@@ -106,6 +84,10 @@ M.toggle_bin = function()
 
   util.toggle(opt.xxd.executable, args, "bin", function(b)
     vim.bo[b].syntax = "xxd"
+    local api = require("nvim-elf-file")
+    for key, value in pairs(opt.keymaps) do
+      vim.keymap.set("n", key, "<Plug>(nvim-elf-file-" .. value .. ")", { buffer = b, desc = api.COMMANDS[value] })
+    end
   end)
 end
 
@@ -185,20 +167,58 @@ M.dump = function()
 end
 
 ---Show additional information about the item under the cursor
--- M.hover = function()
--- end
+M.hover = function()
+  if M.is_elf_file() then
+    -- TODO: Show help for <cword>
+  else
+    local bin = require("nvim-elf-file.bin")
+    local opt = require("nvim-elf-file.config").options
+    local pos = vim.fn.getpos(".")
+    local line, col = pos[2], pos[3]
+    local fmt = (opt.xxd.uppercase and "%X" or "%x")
+    local address = bin.pos2addr(line, col)
+    local lines = {
+      tostring(address),
+      "0x" .. string.format(fmt, address),
+    }
+    vim.lsp.util.open_floating_preview(lines, "", { title = " Address: ", border = "rounded" })
+  end
+end
+
+---Search for text in a bin file
+M.search_text = function()
+  local strings = {}
+
+  local text = vim.fn.system("strings " .. vim.fn.expand("%"))
+  for line in text:gmatch("[^\r\n]+") do
+    table.insert(strings, line)
+  end
+  vim.ui.select(strings, {
+    prompt = "Strings:",
+  }, function(choice)
+    if choice then
+      vim.fn.setreg("0", choice)
+      vim.notify("Yanked " .. choice .. " to register 0")
+    end
+  end)
+end
 
 ---Search for raw bytes in a bin file
--- M.search = function()
--- end
+M.search_binary = function() end
+
+---Search for raw bytes in a bin file
+M.refresh = function() end
 
 ---@type table[nvim-elf-file.Command, string]
 M.COMMANDS = {
+  ["help"] = "Show keybinds",
   ["toggle-elf"] = "Toggle readelf display",
   ["toggle-bin"] = "Toggle xxd binary display",
   ["dump"] = "Dump section/symbol/file under cursor",
-  -- ["hover"] = "Show a hover with additional info",
-  -- ["search"] = "Search for raw bytes in a binary file",
+  ["hover"] = "Show a hover with additional info",
+  ["search-text"] = "Search for text in a binary file",
+  ["search-bin"] = "Search for raw bytes in a binary file",
+  ["refresh"] = "Reload toggle",
 }
 
 ---@type table[nvim-elf-file.BufHidden, string]

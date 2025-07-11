@@ -64,7 +64,6 @@ For the best experience, use `make shell` and `make setup` when developing
 locally. Use `make docker.run` to diagnose environment leaks.
 
 ## Notes
-
 - `init.lua` is intended to be API stable - don't break users!
 - `CHANGELOG.md` should be updated for each release.
 - Docs are generated locally - if you update config, please update the
@@ -75,19 +74,13 @@ locally. Use `make docker.run` to diagnose environment leaks.
 ## Roadmap
 
 - bin file search
-- snacks picker strings in bin
-- bin goto byte
-- snacks picker symbols / sections in elf
-- `vim.ui.input({prompt="Search Text: "}, function(s) end)` if s ~= ""
+    - `vim.ui.input({prompt="Search Text: "}, function(s) end)` if s ~= ""
     - `:lua vim.fn.search([[00\(  .\+\_s\d\+: \)\?03]])`
     - `:lua vim.fn.search([[A\(\_s.*  \)\?B]])`
-- `rg ABSL options-pinned.h -b -N -o -m 1 -U --binary --byte-ffset 0`
-- `local pos = vim.fn.getpos(".")  -- {bufnum, line, col, off}`
-- `local byte_offset = vim.fn.line2byte(pos[2]) + pos[3] - 2`
-- set cursor position as byte index when toggling binary
-- Hover hints: vim.lsp.util.open_floating_preview(), vim.api.nvim_open_with()
+    - `rg --text --only-matching --byte-offset (?-u:\xff\xff\xff\x6f) a.bin`
+- elf hover hints
 - cache readelf/objdump per-buffer
-- `nvim_buf_add_highlight`
+- refresh
 - gifs in docs
 
 --------------------------------------------------------------------------------
