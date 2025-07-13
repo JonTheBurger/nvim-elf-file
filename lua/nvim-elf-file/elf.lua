@@ -132,7 +132,7 @@ M.parse_header = function(text)
     return nil
   end
 
-  util.log.debug(vim.inspect(header))
+  util.log.debug(header)
   return header
 end
 
@@ -174,7 +174,7 @@ M.parse_section = function(line)
   end
   section.kind = field
 
-  util.log.debug(vim.inspect(section))
+  util.log.debug(section)
   return section
 end
 
@@ -266,7 +266,7 @@ M.parse_symbol = function(line)
   end
   symbol.name = field
 
-  util.log.debug(vim.inspect(symbol))
+  util.log.debug(symbol)
   return symbol
 end
 

@@ -32,8 +32,7 @@ Requires:
   ---@type nvim-elf-file.UserOptions
   opts = {},
   keys = {
-    { "<leader>Ee", "<Plug>(nvim-elf-file-toggle-elf)", desc = "Toggle Elf View" },
-    { "<leader>Eb", "<Plug>(nvim-elf-file-toggle-bin)", desc = "Toggle Bin View" },
+    { "<leader>x", "<Plug>(nvim-elf-file-toggle-bin)", desc = "Toggle Bin View" },
   },
   cmd = { "ElfFile" },
 }
@@ -48,8 +47,7 @@ Requires:
   opt = true,
   config = function()
     require("nvim-elf-file").setup({})
-    vim.keymap.set("n", "<leader>Ee", "<Plug>(nvim-elf-file-toggle-elf)", { noremap = true, desc = "Toggle Elf View", })
-    vim.keymap.set("n", "<leader>Eb", "<Plug>(nvim-elf-file-toggle-bin)", { noremap = true, desc = "Toggle Bin View", })
+    vim.keymap.set("n", "<leader>x", "<Plug>(nvim-elf-file-toggle-bin)", { noremap = true, desc = "Toggle Bin View", })
   end
 }
 ```
@@ -64,6 +62,19 @@ add({
   checkout = ""
 })
 ```
+
+--------------------------------------------------------------------------------
+
+## Dependencies
+
+This plugin uses some external programs to run properly. Please ensure the
+following are installed:
+
+- `readelf` (and any architecture-specific `readelf`, such as `arm-none-eabi-readelf`)
+- `objdump` (and any architecture-specific `objdump`, such as `arm-none-eabi-objdump`)
+- `xxd`
+- `strings`
+- `rg` (ripgrep)
 
 --------------------------------------------------------------------------------
 
@@ -156,29 +167,50 @@ Some common machines include:
 
 This plugin provides the `ElfFile` EX Command with sub-commands:
 
-| Command              | Description                                                         |
-| -------------------- | ------------------------------------------------------------------- |
-| `ElfFile toggle bin` | Enables/Disables binary byte viewer.                                |
-| `ElfFile toggle elf` | Enables/Disables readelf view for `.elf` files.                     |
-| `ElfFile dump`       | Dumps the section or symbol under the current line for `.elf` files |
+| Command               | Description                              |
+| --------------------- | ---------------------------------------- |
+| `ElfFile help`        | `Show keybinds`                          |
+| `ElfFile toggle`      | `Toggle display based on filetype`       |
+| `ElfFile toggle elf`  | `Toggle readelf display`                 |
+| `ElfFile toggle bin`  | `Toggle xxd binary display`              |
+| `ElfFile dump`        | `Dump section/symbol/file under cursor`  |
+| `ElfFile jump`        | `Jump toan address in a binary file`     |
+| `ElfFile hover`       | `Show a hover with additional info`      |
+| `ElfFile search text` | `Search for textin a binary file`        |
+| `ElfFile search bin`  | `Search for raw bytes in a binary file`  |
+| `ElfFile refresh`     | `Reload toggle`                          |
 
 This plugin also provides `<Plug>(nvim-elf-file-<command>)` mappings:
 
-| Mapping                            | Command              |
-| ---------------------------------- | -------------------- |
-| `<Plug>(nvim-elf-file-toggle-bin)` | `ElfFile toggle bin` |
-| `<Plug>(nvim-elf-file-toggle-elf)` | `ElfFile toggle elf` |
-| `<Plug>(nvim-elf-file-dump)`       | `ElfFile dump`       |
+| Mapping                             | Command               |
+| ----------------------------------- | --------------------- |
+| `<Plug>(nvim-elf-file-help)`        | `ElfFile help`        |
+| `<Plug>(nvim-elf-file-toggle)`      | `ElfFile toggle`      |
+| `<Plug>(nvim-elf-file-toggle-elf)`  | `ElfFile toggle elf`  |
+| `<Plug>(nvim-elf-file-toggle-bin)`  | `ElfFile toggle bin`  |
+| `<Plug>(nvim-elf-file-dump)`        | `ElfFile dump`        |
+| `<Plug>(nvim-elf-file-jump)`        | `ElfFile jump`        |
+| `<Plug>(nvim-elf-file-hover)`       | `ElfFile hover`       |
+| `<Plug>(nvim-elf-file-search-text)` | `ElfFile search text` |
+| `<Plug>(nvim-elf-file-search-bin)`  | `ElfFile search bin`  |
+| `<Plug>(nvim-elf-file-refresh)`     | `ElfFile refresh`     |
 
 This plugin also keeps the lua API located in `require("nvim-elf-file")` stable:
 
-| Function                           | Command                                                                         |
-| ---------------------------------- | ------------------------------------------------------------------------------- |
-| `setup(opts)`                      | `Set up the plugin with custom settings`                                        |
-| `is_elf_file(file)`                | `Checks if thebufnr/string path is an ELF file by checking for the magic bytes` |
-| `toggle_elf()`                     | `Uses readelf to dump the elf file contents into a readonly buffer`             |
-| `toggle_bin()`                     | `Uses xxd dump the current buffer as hex`                                       |
-| `dump()`                           | `Dumps the section / symbol / function / file under cursor in a new buffer`     |
+| Function            | Command                                                                         |
+| ------------------- | ------------------------------------------------------------------------------- |
+| `setup(opts)`       | `Set up the plugin with custom settings`                                        |
+| `is_elf_file(file)` | `Checks if thebufnr/string path is an ELF file by checking for the magic bytes` |
+| `help()`            | `Show keybinds`                                                                 |
+| `toggle()`          | `Toggle based on file type`                                                     |
+| `toggle_elf()`      | `Uses readelf to dump the elf file contents into a readonly buffer`             |
+| `toggle_bin()`      | `Uses xxd dump the current buffer as hex`                                       |
+| `dump()`            | `Dumps the section / symbol / function / file under cursor in a new buffer`     |
+| `jump()`            | `Jump to an address in a bin file`                                              |
+| `hover()`           | `Show additional information about the item under the cursor`                   |
+| `search_text()`     | `Search for text in a bin file using strings`                                   |
+| `search_binary()`   | `Search for raw bytes in a bin file using rg`                                   |
+| `refresh()`         | `Redo toggle`                                                                   |
 
 --------------------------------------------------------------------------------
 

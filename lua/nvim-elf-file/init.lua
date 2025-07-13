@@ -21,7 +21,12 @@ M.help = function()
   for key, cmd in pairs(opt.keymaps) do
     lines[#lines + 1] = '["' .. key .. '"] = "' .. tostring(api.COMMANDS[cmd] .. '"')
   end
-  vim.lsp.util.open_floating_preview(lines, "lua", { title = " Keymap: ", border = "rounded", width = 80, height = 10 })
+  table.sort(lines)
+  vim.lsp.util.open_floating_preview(
+    lines,
+    "lua",
+    { title = " Keymap: ", border = "rounded", width = 60, height = #lines }
+  )
 end
 
 ---Dumps ELF file symbol table in the current buffer, or restores the ELF file.
@@ -59,7 +64,7 @@ M.toggle_bin = function()
   local util = require("nvim-elf-file.util")
   local buf = vim.api.nvim_get_current_buf()
   if vim.b[buf].nvim_elf_file == nil then
-    vim.b[buf].nvim_elf_file = { is_bin_on = false, width = util.get_win_width() }
+    vim.b[buf].nvim_elf_file = { is_bin_on = false }
   end
   vim.b[buf].nvim_elf_file.width = util.get_win_width()
 
@@ -179,12 +184,14 @@ end
 
 ---Jump to an address in a bin file
 M.jump = function()
+  local util = require("nvim-elf-file.util")
   local bin = require("nvim-elf-file.bin")
 
   vim.ui.input({ prompt = "Jump to Address: (hex or decimal)", default = "0x" }, function(text)
     if not text then
       return
     end
+    util.log.trace("Address: " .. text)
 
     local address = tonumber(text)
     if not address then
@@ -204,8 +211,10 @@ M.hover = function()
     util.log.trace("hover info for: " .. word)
 
     if info == nil then
-      if word:match("^%x+$") then
+      if word:match("^0%x+$") then
         info = { string.format("%d", tonumber(word, 16)) }
+      elseif word:match("%d+$") then
+        info = { string.format("%d", tonumber(word, 10)) }
       else
         info = { "No info found" }
       end
@@ -228,11 +237,15 @@ M.hover = function()
   end
 end
 
----Search for text in a bin file
+---Search for text in a bin file using strings
 M.search_text = function()
+  local util = require("nvim-elf-file.util")
+  local config = require("nvim-elf-file.config")
   local strings = {}
 
-  local text = vim.fn.system("strings " .. vim.fn.expand("%"))
+  local cmd = { config.strings, vim.fn.expand("%") }
+  util.log.info(table.concat(cmd, " "))
+  local text = vim.fn.system(cmd)
   for line in text:gmatch("[^\r\n]+") do
     table.insert(strings, line)
   end
@@ -240,16 +253,20 @@ M.search_text = function()
     prompt = "Strings:",
   }, function(choice)
     if choice then
-      vim.fn.setreg("0", choice)
-      vim.notify("Yanked " .. choice .. " to register 0")
+      local registers = config.yank_registers
+      for reg in registers do
+        vim.fn.setreg(reg, choice)
+      end
+      vim.notify('Yanked "' .. choice .. '" to registers ' .. table.concat(registers, ", "))
     end
   end)
 end
 
----Search for raw bytes in a bin file
+---Search for raw bytes in a bin file using rg
 M.search_binary = function()
   vim.ui.input({ prompt = "Search Hex: (0-9, a-f, A-F)", default = "" }, function(text)
     local bin = require("nvim-elf-file.bin")
+    local config = require("nvim-elf-file.config")
     local util = require("nvim-elf-file.util")
     -- Clean up user input
     text = text or ""
@@ -261,7 +278,7 @@ M.search_binary = function()
     if text == "" then
       return
     end
-    util.log.debug("Searching for " .. text)
+    util.log.trace("Searching for " .. text)
 
     local pattern = ""
     for i = 1, #text, 2 do
@@ -269,7 +286,7 @@ M.search_binary = function()
     end
 
     local cmd = {
-      "rg",
+      config.rg,
       "--text",
       "--only-matching",
       "--byte-offset",

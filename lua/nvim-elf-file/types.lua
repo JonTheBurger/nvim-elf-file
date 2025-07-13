@@ -31,6 +31,7 @@
 ---@field automatic? table[string, boolean] Disable automatic toggle per-filetype
 ---@field bufhidden? nvim-elf-file.BufHidden Action to take when exiting a section/symbol dump buffer
 ---@field log_level? nvim-elf-file.LogLevel Verbosity of `vim.fn.stdpath("state") .. "/nvim-elf-file.log"`
+---@field yank_registers? string[] List of registers to copy string to when using ElfFile search text
 ---@field refresh? boolean Automatically refresh binary file render on WinResized
 
 ---@class nvim-elf-file.Options Plugin options, fully resolved
@@ -42,6 +43,7 @@
 ---@field automatic table[string, boolean] Disable automatic toggle_elf / toggle_bin
 ---@field bufhidden nvim-elf-file.BufHidden Action to take when exiting a section/symbol dump buffer
 ---@field log_level nvim-elf-file.LogLevel Verbosity of `vim.fn.stdpath("state") .. "/nvim-elf-file.log"`
+---@field yank_registers string[] List of registers to copy string to when using ElfFile search text
 ---@field refresh boolean Automatically refresh binary file render on WinResized
 
 ---@class nvim-elf-file.Header ELF file header

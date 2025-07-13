@@ -73,10 +73,10 @@ locally. Use `make docker.run` to diagnose environment leaks.
 
 ## Roadmap
 
-- fix config
-- better logging
-- gifs in docs & readme update
-- cache readelf/objdump per-buffer
+Planned work items are listed here:
+
+- fix config & readme update
+- gifs in docs
 
 --------------------------------------------------------------------------------
 

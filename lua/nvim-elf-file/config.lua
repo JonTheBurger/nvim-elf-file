@@ -43,6 +43,12 @@ M.defaults = {
     uppercase = false,
   },
 
+  -- Name of strings command
+  strings = "strings",
+
+  -- Name of ripgrep command
+  rg = "rg",
+
   -- nvim-elf-file buffer-specific keymaps.
   -- Each entry is a <Plug>(nvim-elf-file-<command>)
   -- See list of commands in "Usage" below
@@ -66,6 +72,9 @@ M.defaults = {
     elf = true,
     bin = true,
   },
+
+  -- List of registers to yank strings to
+  yank_registers = { "0", "'", '"' },
 
   -- What to do when a e.g. disassembled function buffer goes out of view.
   -- By default, it is wiped out.
