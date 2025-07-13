@@ -2,7 +2,7 @@
 ---See: https://luals.github.io/wiki/definition-files/
 -- luacheck: ignore 631 (line-too-long)
 
----@alias nvim-elf-file.Command '"toggle-elf"' | '"toggle-bin"' | '"dump"' | '"hover"' | '"search-text"' | '"search-bin"' | '"refresh"' | '"help"'
+---@alias nvim-elf-file.Command '"toggle"' | '"toggle-elf"' | '"toggle-bin"' | '"dump"' | '"hover"' | '"search-text"' | '"search-bin"' | '"refresh"' | '"help"'
 ---@alias nvim-elf-file.BufHidden '""' | '"hide"' | '"unload"' | '"delete"' | '"wipe"'
 ---@alias nvim-elf-file.LogLevel '"trace"' | '"debug"' | '"info"' | '"warn"' | '"error"' | '"critical"'
 ---@alias nvim-elf-file.Radix '"hexadecimal"' | '"decimal"'

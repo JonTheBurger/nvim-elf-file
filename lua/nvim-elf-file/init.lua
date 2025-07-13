@@ -56,16 +56,17 @@ end
 
 ---Dumps bin as hex in the current buffer, or restores the bin file.
 M.toggle_bin = function()
+  local util = require("nvim-elf-file.util")
   local buf = vim.api.nvim_get_current_buf()
   if vim.b[buf].nvim_elf_file == nil then
-    vim.b[buf].nvim_elf_file = { is_bin_on = false }
+    vim.b[buf].nvim_elf_file = { is_bin_on = false, width = util.get_win_width() }
   end
+  vim.b[buf].nvim_elf_file.width = util.get_win_width()
 
   -- Make xxd command
   local opt = require("nvim-elf-file.config").options
   local group = opt.xxd.bytes_per_column
 
-  local util = require("nvim-elf-file.util")
   local width = util.get_win_width()
 
   local bin = require("nvim-elf-file.bin")
@@ -89,6 +90,15 @@ M.toggle_bin = function()
       vim.keymap.set("n", key, "<Plug>(nvim-elf-file-" .. value .. ")", { buffer = b, desc = api.COMMANDS[value] })
     end
   end)
+end
+
+---Toggle based on file type
+M.toggle = function()
+  if M.is_elf_file() then
+    M.toggle_elf()
+  else
+    M.toggle_bin()
+  end
 end
 
 ---Dump the section / symbol / function / file under cursor in a new temporary buffer
@@ -174,9 +184,10 @@ M.hover = function()
     local bin = require("nvim-elf-file.bin")
     local opt = require("nvim-elf-file.config").options
     local pos = vim.fn.getpos(".")
-    local line, col = pos[2], pos[3]
+    local buf, line, col = pos[1], pos[2], pos[3]
     local fmt = (opt.xxd.uppercase and "%X" or "%x")
-    local address = bin.pos2addr(line, col)
+    local width = vim.b[buf].nvim_elf_file.width
+    local address = bin.pos2addr(line, col, width)
     local lines = {
       tostring(address),
       "0x" .. string.format(fmt, address),
@@ -204,14 +215,75 @@ M.search_text = function()
 end
 
 ---Search for raw bytes in a bin file
-M.search_binary = function() end
+M.search_binary = function()
+  vim.ui.input({prompt="Search Hex: (0-9, a-f, A-F)", default=""}, function(text)
+    local bin = require("nvim-elf-file.bin")
+    local util = require("nvim-elf-file.util")
+    -- Clean up user input
+    text = text or ""
+    text = text:gsub("^0[xX]", "")
+    text = text:gsub("[^A-Fa-f0-9]", "")
+    if #text % 2 ~= 0 then
+      text = "0" .. text
+    end
+    if text == "" then return end
+    util.log.debug("Searching for " .. text)
 
----Search for raw bytes in a bin file
-M.refresh = function() end
+    local pattern = ""
+    for i = 1, #text, 2 do
+      pattern = pattern .. "\\x" .. text:sub(i,i) .. text:sub(i + 1, i+1)
+    end
+
+    local cmd = {
+      "rg",
+      "--text",
+      "--only-matching",
+      "--byte-offset",
+      "(?-u:" .. pattern ..")",
+      vim.fn.expand("%"),
+    }
+
+    vim.system(cmd, {}, function(out)
+      if out.code ~= 0 then
+        return
+      end
+
+      local choices = {}
+      for addr in out.stdout:gmatch("%d+") do
+        choices[#choices + 1] = addr
+      end
+      if #choices > 0 then
+        vim.schedule(function()
+          vim.ui.select(
+            choices,
+            {
+              prompt = "Which occurrence?",
+              format_item = function(item)
+                return item .. " (0x" .. string.format("%x", tonumber(item)) .. ")"
+              end,
+            },
+            function(choice)
+              vim.api.nvim_win_set_cursor(0, bin.addr2pos(tonumber(choice)))
+            end
+          )
+        end)
+      else
+        vim.notify("No occurrence of " .. text .. " found", vim.log.levels.ERROR)
+      end
+    end)
+  end)
+end
+
+---Redo toggle
+M.refresh = function()
+  M.toggle()
+  M.toggle()
+end
 
 ---@type table[nvim-elf-file.Command, string]
 M.COMMANDS = {
   ["help"] = "Show keybinds",
+  ["toggle"] = "Toggle display based on filetype",
   ["toggle-elf"] = "Toggle readelf display",
   ["toggle-bin"] = "Toggle xxd binary display",
   ["dump"] = "Dump section/symbol/file under cursor",

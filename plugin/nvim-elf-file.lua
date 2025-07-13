@@ -31,18 +31,23 @@ if not vim.g.loaded_nvim_elf_file then
       elseif toggle == "elf" then
         api.toggle_elf()
       else
-        if api.is_elf_file() then
-          api.toggle_elf()
-        else
-          api.toggle_bin()
-        end
+        api.toggle()
       end
     elseif sub == "dump" then
       api.dump()
-      -- elseif sub == "hover" then
-      --   elf.hover()
-      -- elseif sub == "search" then
-      --   elf.search()
+    elseif sub == "hover" then
+      api.hover()
+    elseif sub == "search" then
+      local search = opts.fargs[2]
+      if search == "bin" then
+        api.search_binary()
+      elseif search == "text" then
+        api.search_text()
+      end
+    elseif sub == "help" then
+      api.help()
+    elseif sub == "refresh" then
+      api.refresh()
     end
   end, {
     nargs = "+",
@@ -55,14 +60,19 @@ if not vim.g.loaded_nvim_elf_file then
       line = line:sub(1, cursor)
       if line:find("^ElfFile%s+toggle") then
         return { "bin", "elf" }
+      elseif line:find("^ElfFile%s+search") then
+        return { "bin", "text" }
       end
-      return { "toggle", "dump" } --, "hover", "search" }
+      return { "toggle", "dump", "hover", "search", "help", "refresh" }
     end,
   })
 
   vim.keymap.set("n", "<Plug>(nvim-elf-file-help)", function()
     require("nvim-elf-file").help()
-  end, { noremap = true, desc = api.COMMANDS["refresh"] })
+  end, { noremap = true, desc = api.COMMANDS["help"] })
+  vim.keymap.set("n", "<Plug>(nvim-elf-file-toggle)", function()
+    require("nvim-elf-file").toggle()
+  end, { noremap = true, desc = api.COMMANDS["toggle"] })
   vim.keymap.set("n", "<Plug>(nvim-elf-file-toggle-elf)", function()
     require("nvim-elf-file").toggle_elf()
   end, { noremap = true, desc = api.COMMANDS["toggle-elf"] })

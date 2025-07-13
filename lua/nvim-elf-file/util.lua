@@ -9,6 +9,15 @@ M.log = require("plenary.log").new({
   file_levels = true,
 })
 
+---Gets the editable width of the current window in characters
+---@return integer width of the window that is usable
+M.get_win_width = function()
+  local win = vim.api.nvim_get_current_win()
+  local win_info = vim.fn.getwininfo(win)[1]
+  local width = win_info.width - win_info.textoff
+  return width
+end
+
 ---Gets the restorable state of the current buffer
 ---@param buf? integer buffer id
 ---@return nvim-elf-file.BufferState
@@ -71,8 +80,20 @@ M.buf_from_cmd_async = function(buf, cmd, args, callback)
       vim.schedule(function()
         vim.bo[buf].readonly = false
         vim.bo[buf].modifiable = true
+        local first = true
         for line in data:gmatch("[^\r\n]+") do
-          vim.api.nvim_buf_set_lines(buf, -1, -1, false, { line })
+          if first then
+            local prev = vim.api.nvim_buf_get_lines(buf, -2, -1, false)[1]
+            if not prev:match("[\r\n]$") then
+              -- Append to a partially written line
+              vim.api.nvim_buf_set_lines(buf, -2, -1, false, { prev .. line })
+            else
+              vim.api.nvim_buf_set_lines(buf, -1, -1, false, { line })
+            end
+            first = false
+          else
+            vim.api.nvim_buf_set_lines(buf, -1, -1, false, { line })
+          end
         end
         vim.bo[buf].readonly = true
         vim.bo[buf].modifiable = false
@@ -97,7 +118,7 @@ M.toggle = function(cmd, args, ft, callback)
   -- `nil`, a `nil` value is treated as a no-op by the toggle functions.
   if vim.b[buf].nvim_elf_file == nil then
     ---@type nvim-elf-file.BufferOpts
-    vim.b[buf].nvim_elf_file = {}
+    vim.b[buf].nvim_elf_file = { width = util.get_win_width() }
   end
 
   if vim.b[buf].nvim_elf_file[key] == false then
@@ -117,6 +138,7 @@ M.toggle = function(cmd, args, ft, callback)
     vim.b[buf].nvim_elf_file = {
       buf_state = buf_state,
       [key] = true,
+      width = util.get_win_width(),
     }
   elseif vim.b[buf].nvim_elf_file[key] == true then
     util.log.trace("toggle " .. key .. " was true")
@@ -136,15 +158,6 @@ M.toggle = function(cmd, args, ft, callback)
     -- We use the nil case as a no-op to prevent infinite recursion
     util.log.trace("toggle " .. key .. " was nil")
   end
-end
-
----Gets the editable width of the current window in characters
----@return integer width of the window that is usable
-M.get_win_width = function()
-  local win = vim.api.nvim_get_current_win()
-  local win_info = vim.fn.getwininfo(win)[1]
-  local width = win_info.width - win_info.textoff
-  return width
 end
 
 return M

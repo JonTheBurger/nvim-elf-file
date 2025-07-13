@@ -50,22 +50,17 @@ end
 ---Determines the nearest byte offset for the xxd cursor
 ---@param line integer Line in buffer
 ---@param col integer Column in buffer
+---@param width integer (Original) width of the buffer
 ---@return integer address offset of the closest byte under cursor
-M.pos2addr = function(line, col)
+M.pos2addr = function(line, col, width)
   local opt = require("nvim-elf-file.config").options
   local bytes_per_group = opt.xxd.bytes_per_column
-
-  local util = require("nvim-elf-file.util")
-  local width = util.get_win_width()
 
   local bytes_per_line = M.get_bytes_per_line(bytes_per_group, width)
   local chars_per_group = bytes_per_group * M.NIBBLES_PER_BYTE + 1
 
-  -- Minus 1 more because columns are 1-indexed
-
   local address
-  -- TODO: Remove extra -1 when first line is no longer blank
-  local line_bytes = bytes_per_line * (line - 1 - 1)
+  local line_bytes = bytes_per_line * (line - 1)
 
   -- +2: +1 for space before text start, +1 to put cursor on text start
   local groups_per_line = bytes_per_line / bytes_per_group
@@ -74,6 +69,7 @@ M.pos2addr = function(line, col)
   if col >= text_start then
     address = line_bytes + (col - text_start)
   else
+    -- Minus 1 more because columns are 1-indexed
     col = col - M.ADDRESS_HEADER_LEN - 1
     if col < 0 then
       col = 0
@@ -84,6 +80,20 @@ M.pos2addr = function(line, col)
     address = line_bytes + col_bytes
   end
   return address
+end
+
+M.addr2pos = function(address)
+  local opt = require("nvim-elf-file.config").options
+  local width = vim.b.nvim_elf_file.width
+  local bytes_per_group = opt.xxd.bytes_per_column
+  local bytes_per_line = M.get_bytes_per_line(bytes_per_group, width)
+  local chars_per_group = bytes_per_group * M.NIBBLES_PER_BYTE + 1
+
+  local byte_offset = address % bytes_per_line
+  local line = (address - byte_offset) / bytes_per_line
+  local col = M.ADDRESS_HEADER_LEN + (byte_offset / bytes_per_group * chars_per_group)
+
+  return {line + 1, col}
 end
 
 return M
