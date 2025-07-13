@@ -50,9 +50,15 @@ M.defaults = {
     ["?"] = "help",
     ["<CR>"] = "dump",
     ["<S-K>"] = "hover",
+    ["sj"] = "jump",
+    ["sb"] = "search-bin",
+    ["st"] = "search-text",
+    ["<F1>"] = "hover",
     ["<F2>"] = "search-text",
     ["<F3>"] = "search-bin",
+    ["<F4>"] = "jump",
     ["<F5>"] = "refresh",
+    ["<F12>"] = "dump",
   },
 
   -- Set to false to disable automatic conversion of the filetype's buffer
@@ -66,7 +72,7 @@ M.defaults = {
   bufhidden = "wipe",
 
   -- Verbosity of `vim.fn.stdpath("data") .. "/nvim-elf-file.log"`
-  log_level = "debug",
+  log_level = "trace",
 }
 tbl.freeze(M.defaults)
 
@@ -107,6 +113,18 @@ end
 function Options:apply()
   local util = require("nvim-elf-file.util")
   util.log.level = self.log_level
+
+  if self.refresh then
+    vim.api.nvim_create_augroup("nvim-elf-file", { clear = true })
+    vim.api.nvim_create_autocmd({ "WinResized" }, {
+      group = "nvim-elf-file",
+      callback = function()
+        if vim.b.nvim_elf_file and vim.b.nvim_elf_file.is_bin_on then
+          require("nvim-elf-file").refresh()
+        end
+      end,
+    })
+  end
 end
 
 ---@type nvim-elf-file.Options

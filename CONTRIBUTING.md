@@ -73,15 +73,10 @@ locally. Use `make docker.run` to diagnose environment leaks.
 
 ## Roadmap
 
-- bin file search
-    - `vim.ui.input({prompt="Search Text: "}, function(s) end)` if s ~= ""
-    - `:lua vim.fn.search([[00\(  .\+\_s\d\+: \)\?03]])`
-    - `:lua vim.fn.search([[A\(\_s.*  \)\?B]])`
-    - `rg --text --only-matching --byte-offset (?-u:\xff\xff\xff\x6f) a.bin`
-- elf hover hints
+- fix config
+- better logging
+- gifs in docs & readme update
 - cache readelf/objdump per-buffer
-- refresh
-- gifs in docs
 
 --------------------------------------------------------------------------------
 

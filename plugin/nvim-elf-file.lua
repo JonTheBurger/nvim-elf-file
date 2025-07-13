@@ -35,6 +35,8 @@ if not vim.g.loaded_nvim_elf_file then
       end
     elseif sub == "dump" then
       api.dump()
+    elseif sub == "jump" then
+      api.jump()
     elseif sub == "hover" then
       api.hover()
     elseif sub == "search" then
@@ -63,7 +65,7 @@ if not vim.g.loaded_nvim_elf_file then
       elseif line:find("^ElfFile%s+search") then
         return { "bin", "text" }
       end
-      return { "toggle", "dump", "hover", "search", "help", "refresh" }
+      return { "toggle", "dump", "jump", "hover", "search", "help", "refresh" }
     end,
   })
 
@@ -82,6 +84,9 @@ if not vim.g.loaded_nvim_elf_file then
   vim.keymap.set("n", "<Plug>(nvim-elf-file-dump)", function()
     require("nvim-elf-file").dump()
   end, { noremap = true, desc = api.COMMANDS["dump"] })
+  vim.keymap.set("n", "<Plug>(nvim-elf-file-jump)", function()
+    require("nvim-elf-file").jump()
+  end, { noremap = true, desc = api.COMMANDS["jump"] })
   vim.keymap.set("n", "<Plug>(nvim-elf-file-hover)", function()
     require("nvim-elf-file").hover()
   end, { noremap = true, desc = api.COMMANDS["hover"] })

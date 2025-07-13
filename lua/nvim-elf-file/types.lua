@@ -2,7 +2,7 @@
 ---See: https://luals.github.io/wiki/definition-files/
 -- luacheck: ignore 631 (line-too-long)
 
----@alias nvim-elf-file.Command '"toggle"' | '"toggle-elf"' | '"toggle-bin"' | '"dump"' | '"hover"' | '"search-text"' | '"search-bin"' | '"refresh"' | '"help"'
+---@alias nvim-elf-file.Command '"toggle"' | '"toggle-elf"' | '"toggle-bin"' | '"dump"' | '"jump"' | '"hover"' | '"search-text"' | '"search-bin"' | '"refresh"' | '"help"'
 ---@alias nvim-elf-file.BufHidden '""' | '"hide"' | '"unload"' | '"delete"' | '"wipe"'
 ---@alias nvim-elf-file.LogLevel '"trace"' | '"debug"' | '"info"' | '"warn"' | '"error"' | '"critical"'
 ---@alias nvim-elf-file.Radix '"hexadecimal"' | '"decimal"'
@@ -31,6 +31,7 @@
 ---@field automatic? table[string, boolean] Disable automatic toggle per-filetype
 ---@field bufhidden? nvim-elf-file.BufHidden Action to take when exiting a section/symbol dump buffer
 ---@field log_level? nvim-elf-file.LogLevel Verbosity of `vim.fn.stdpath("state") .. "/nvim-elf-file.log"`
+---@field refresh? boolean Automatically refresh binary file render on WinResized
 
 ---@class nvim-elf-file.Options Plugin options, fully resolved
 ---@field user nvim-elf-file.UserOptions Original user options + defaults
@@ -41,6 +42,7 @@
 ---@field automatic table[string, boolean] Disable automatic toggle_elf / toggle_bin
 ---@field bufhidden nvim-elf-file.BufHidden Action to take when exiting a section/symbol dump buffer
 ---@field log_level nvim-elf-file.LogLevel Verbosity of `vim.fn.stdpath("state") .. "/nvim-elf-file.log"`
+---@field refresh boolean Automatically refresh binary file render on WinResized
 
 ---@class nvim-elf-file.Header ELF file header
 ---@field type string EXEC (executable) or REL (static|shared library/object file)

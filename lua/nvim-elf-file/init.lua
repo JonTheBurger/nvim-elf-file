@@ -154,7 +154,8 @@ M.dump = function()
     bname = "." .. symbol.name .. ".asm"
     -- Build command
     cmd = elf.objdump()
-    args = { "--wide", "--demangle", "--start-address", symbol.start, "--stop-address", symbol.stop }
+    -- "--start-address", symbol.start, "--stop-address", symbol.stop
+    args = { "--wide", "--demangle", "--disassemble=" .. symbol.name }
     if symbol.kind == "FUNC" then
       args[#args + 1] = "--source"
     else
@@ -176,10 +177,41 @@ M.dump = function()
   end)
 end
 
+---Jump to an address in a bin file
+M.jump = function()
+  local bin = require("nvim-elf-file.bin")
+
+  vim.ui.input({ prompt = "Jump to Address: (hex or decimal)", default = "0x" }, function(text)
+    if not text then
+      return
+    end
+
+    local address = tonumber(text)
+    if not address then
+      vim.notify("Invalid address: " .. text, vim.log.levels.ERROR)
+    end
+    vim.api.nvim_win_set_cursor(0, bin.addr2pos(address))
+  end)
+end
+
 ---Show additional information about the item under the cursor
 M.hover = function()
+  local util = require("nvim-elf-file.util")
   if M.is_elf_file() then
-    -- TODO: Show help for <cword>
+    local elf = require("nvim-elf-file.elf")
+    local word = vim.fn.expand("<cWORD>")
+    local info = elf.INFO[word]
+    util.log.trace("hover info for: " .. word)
+
+    if info == nil then
+      if word:match("^%x+$") then
+        info = { string.format("%d", tonumber(word, 16)) }
+      else
+        info = { "No info found" }
+      end
+    end
+
+    vim.lsp.util.open_floating_preview(info, "", { title = " Info: ", border = "rounded" })
   else
     local bin = require("nvim-elf-file.bin")
     local opt = require("nvim-elf-file.config").options
@@ -216,7 +248,7 @@ end
 
 ---Search for raw bytes in a bin file
 M.search_binary = function()
-  vim.ui.input({prompt="Search Hex: (0-9, a-f, A-F)", default=""}, function(text)
+  vim.ui.input({ prompt = "Search Hex: (0-9, a-f, A-F)", default = "" }, function(text)
     local bin = require("nvim-elf-file.bin")
     local util = require("nvim-elf-file.util")
     -- Clean up user input
@@ -226,12 +258,14 @@ M.search_binary = function()
     if #text % 2 ~= 0 then
       text = "0" .. text
     end
-    if text == "" then return end
+    if text == "" then
+      return
+    end
     util.log.debug("Searching for " .. text)
 
     local pattern = ""
     for i = 1, #text, 2 do
-      pattern = pattern .. "\\x" .. text:sub(i,i) .. text:sub(i + 1, i+1)
+      pattern = pattern .. "\\x" .. text:sub(i, i) .. text:sub(i + 1, i + 1)
     end
 
     local cmd = {
@@ -239,7 +273,7 @@ M.search_binary = function()
       "--text",
       "--only-matching",
       "--byte-offset",
-      "(?-u:" .. pattern ..")",
+      "(?-u:" .. pattern .. ")",
       vim.fn.expand("%"),
     }
 
@@ -254,18 +288,14 @@ M.search_binary = function()
       end
       if #choices > 0 then
         vim.schedule(function()
-          vim.ui.select(
-            choices,
-            {
-              prompt = "Which occurrence?",
-              format_item = function(item)
-                return item .. " (0x" .. string.format("%x", tonumber(item)) .. ")"
-              end,
-            },
-            function(choice)
-              vim.api.nvim_win_set_cursor(0, bin.addr2pos(tonumber(choice)))
-            end
-          )
+          vim.ui.select(choices, {
+            prompt = "Which occurrence?",
+            format_item = function(item)
+              return item .. " (0x" .. string.format("%x", tonumber(item)) .. ")"
+            end,
+          }, function(choice)
+            vim.api.nvim_win_set_cursor(0, bin.addr2pos(tonumber(choice)))
+          end)
         end)
       else
         vim.notify("No occurrence of " .. text .. " found", vim.log.levels.ERROR)
@@ -287,6 +317,7 @@ M.COMMANDS = {
   ["toggle-elf"] = "Toggle readelf display",
   ["toggle-bin"] = "Toggle xxd binary display",
   ["dump"] = "Dump section/symbol/file under cursor",
+  ["jump"] = "Jump to an address in a binary file",
   ["hover"] = "Show a hover with additional info",
   ["search-text"] = "Search for text in a binary file",
   ["search-bin"] = "Search for raw bytes in a binary file",

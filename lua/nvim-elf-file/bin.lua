@@ -91,9 +91,9 @@ M.addr2pos = function(address)
 
   local byte_offset = address % bytes_per_line
   local line = (address - byte_offset) / bytes_per_line
-  local col = M.ADDRESS_HEADER_LEN + (byte_offset / bytes_per_group * chars_per_group)
+  local col = M.ADDRESS_HEADER_LEN + math.floor(byte_offset / bytes_per_group * chars_per_group)
 
-  return {line + 1, col}
+  return { line + 1, col }
 end
 
 return M
