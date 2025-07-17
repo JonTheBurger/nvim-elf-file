@@ -20,10 +20,7 @@ M.get_bytes_per_line = function(group, width, bytes_per_line)
   local util = require("nvim-elf-file.util")
   local cols
 
-  util.log.debug("xxd calculations: ")
   if bytes_per_line == nil or bytes_per_line == "auto" then
-    util.log.debug("  window width: " .. tostring(width))
-
     -- Address header + 1 space before text at the end of the line
     local header_width = M.ADDRESS_HEADER_LEN + 1
     width = width - header_width
@@ -46,7 +43,6 @@ M.get_bytes_per_line = function(group, width, bytes_per_line)
   end
   -- xxd columns are the number of bytes to display, so scale by groups (bytes) in the line
   cols = math.floor(cols) * group ---@diagnostic disable-line=param-type-mismatch
-  util.log.debug("  rounded columns: " .. tostring(cols))
   return cols
 end
 

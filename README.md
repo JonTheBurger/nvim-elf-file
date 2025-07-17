@@ -12,7 +12,21 @@ A simple plugin to browse `.elf` and `bin` file contents in the style of
 
 ## Features
 
-TODO: gifs!
+![elf file support](doc/elf.gif)
+
+- Disassemble functions
+- Dump section / object contents
+
+![binary file support](doc/bin.gif)
+
+- Show address cursor hover
+- Jump to address
+- Search hex/text
+- Browse strings
+- Fit/refresh contents to window width
+
+> [!TIP]
+> Use `?` in an elf/bin file to see the key bindings.
 
 --------------------------------------------------------------------------------
 
@@ -84,13 +98,13 @@ The following the default `opts`:
 
 ```lua
 ---@type nvim-elf-file.UserOptions
-M.defaults = {
+opts = {
   -- Path to single readelf program name / executable path,
   -- readelf = "/usr/bin/readelf",
 
   -- Or a function that picks readelf based on machine (see table below)
-  -- An empty string should return a default implementation
-  ---@param machine string
+  -- nil should return a default implementation
+  ---@param machine? string
   readelf = function(machine)
     if machine == "ARM" then
       return "arm-none-eabi-readelf"
@@ -99,13 +113,19 @@ M.defaults = {
   end,
 
   -- Same thing as readelf, but for objdump
-  ---@param machine string
+  ---@param machine? string
   objdump = function(machine)
     if machine == "ARM" then
       return "arm-none-eabi-objdump"
     end
     return "objdump"
   end,
+
+  -- Name of strings command
+  strings = "strings",
+
+  -- Name of ripgrep command
+  rg = "rg",
 
   -- Name of binary dumping program (not machine-dependent)
   xxd = {
@@ -127,14 +147,29 @@ M.defaults = {
   -- Each entry is a <Plug>(nvim-elf-file-<command>)
   -- See list of commands in "Usage" below
   keymaps = {
-    ["<cr>"] = "dump",
+    ["?"] = "help",
+    ["<CR>"] = "dump",
+    ["<S-K>"] = "hover",
+    ["sj"] = "jump",
+    ["sb"] = "search-bin",
+    ["st"] = "search-text",
+    ["ss"] = "search-strings",
+    ["<F1>"] = "hover",
+    ["<F4>"] = "jump",
+    ["<F5>"] = "refresh",
+    ["<F12>"] = "dump",
   },
 
   -- Set to false to disable automatic conversion of the filetype's buffer
   automatic = {
     elf = true,
     bin = true,
+    -- Automatically refresh the render when window size changes
+    refresh = false,
   },
+
+  -- List of registers to yank strings to
+  yank_registers = { "0", "'", '"' },
 
   -- What to do when a e.g. disassembled function buffer goes out of view.
   -- By default, it is wiped out.
@@ -167,33 +202,35 @@ Some common machines include:
 
 This plugin provides the `ElfFile` EX Command with sub-commands:
 
-| Command               | Description                              |
-| --------------------- | ---------------------------------------- |
-| `ElfFile help`        | `Show keybinds`                          |
-| `ElfFile toggle`      | `Toggle display based on filetype`       |
-| `ElfFile toggle elf`  | `Toggle readelf display`                 |
-| `ElfFile toggle bin`  | `Toggle xxd binary display`              |
-| `ElfFile dump`        | `Dump section/symbol/file under cursor`  |
-| `ElfFile jump`        | `Jump toan address in a binary file`     |
-| `ElfFile hover`       | `Show a hover with additional info`      |
-| `ElfFile search text` | `Search for textin a binary file`        |
-| `ElfFile search bin`  | `Search for raw bytes in a binary file`  |
-| `ElfFile refresh`     | `Reload toggle`                          |
+| Command                  | Description                                      |
+| ------------------------ | ------------------------------------------------ |
+| `ElfFile help`           | `Show keybinds`                                  |
+| `ElfFile toggle`         | `Toggle display based on filetype`               |
+| `ElfFile toggle elf`     | `Toggle readelf display`                         |
+| `ElfFile toggle bin`     | `Toggle xxd binary display`                      |
+| `ElfFile dump`           | `Dump section/symbol/file under cursor`          |
+| `ElfFile jump`           | `Jump toan address in a binary file`             |
+| `ElfFile hover`          | `Show a hover with additional info`              |
+| `ElfFile search bin`     | `Search for raw bytes in a binary file`          |
+| `ElfFile search text`    | `Search for textin a binary file`                |
+| `ElfFile search strings` | `Yank from the strings present in a binary file` |
+| `ElfFile refresh`        | `Reload toggle`                                  |
 
 This plugin also provides `<Plug>(nvim-elf-file-<command>)` mappings:
 
-| Mapping                             | Command               |
-| ----------------------------------- | --------------------- |
-| `<Plug>(nvim-elf-file-help)`        | `ElfFile help`        |
-| `<Plug>(nvim-elf-file-toggle)`      | `ElfFile toggle`      |
-| `<Plug>(nvim-elf-file-toggle-elf)`  | `ElfFile toggle elf`  |
-| `<Plug>(nvim-elf-file-toggle-bin)`  | `ElfFile toggle bin`  |
-| `<Plug>(nvim-elf-file-dump)`        | `ElfFile dump`        |
-| `<Plug>(nvim-elf-file-jump)`        | `ElfFile jump`        |
-| `<Plug>(nvim-elf-file-hover)`       | `ElfFile hover`       |
-| `<Plug>(nvim-elf-file-search-text)` | `ElfFile search text` |
-| `<Plug>(nvim-elf-file-search-bin)`  | `ElfFile search bin`  |
-| `<Plug>(nvim-elf-file-refresh)`     | `ElfFile refresh`     |
+| Mapping                                | Command                  |
+| -----------------------------------    | ------------------------ |
+| `<Plug>(nvim-elf-file-help)`           | `ElfFile help`           |
+| `<Plug>(nvim-elf-file-toggle)`         | `ElfFile toggle`         |
+| `<Plug>(nvim-elf-file-toggle-elf)`     | `ElfFile toggle elf`     |
+| `<Plug>(nvim-elf-file-toggle-bin)`     | `ElfFile toggle bin`     |
+| `<Plug>(nvim-elf-file-dump)`           | `ElfFile dump`           |
+| `<Plug>(nvim-elf-file-jump)`           | `ElfFile jump`           |
+| `<Plug>(nvim-elf-file-hover)`          | `ElfFile hover`          |
+| `<Plug>(nvim-elf-file-search-bin)`     | `ElfFile search bin`     |
+| `<Plug>(nvim-elf-file-search-text)`    | `ElfFile search text`    |
+| `<Plug>(nvim-elf-file-search-strings)` | `ElfFile search strings` |
+| `<Plug>(nvim-elf-file-refresh)`        | `ElfFile refresh`        |
 
 This plugin also keeps the lua API located in `require("nvim-elf-file")` stable:
 
@@ -208,8 +245,9 @@ This plugin also keeps the lua API located in `require("nvim-elf-file")` stable:
 | `dump()`            | `Dumps the section / symbol / function / file under cursor in a new buffer`     |
 | `jump()`            | `Jump to an address in a bin file`                                              |
 | `hover()`           | `Show additional information about the item under the cursor`                   |
-| `search_text()`     | `Search for text in a bin file using strings`                                   |
 | `search_binary()`   | `Search for raw bytes in a bin file using rg`                                   |
+| `search_text()`     | `Search for text in a bin file using rg`                                        |
+| `search_strings()`  | `Select from text in a bin file using strings`                                  |
 | `refresh()`         | `Redo toggle`                                                                   |
 
 --------------------------------------------------------------------------------

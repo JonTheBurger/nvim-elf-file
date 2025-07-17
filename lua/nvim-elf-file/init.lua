@@ -37,11 +37,10 @@ M.toggle_elf = function()
   end
 
   local api = require("nvim-elf-file")
-  local elf = require("nvim-elf-file.elf")
   local opt = require("nvim-elf-file.config").options
   local util = require("nvim-elf-file.util")
   util.toggle(
-    elf.readelf(),
+    opt:get_readelf(),
     {
       "--wide",
       "--demangle",
@@ -128,7 +127,7 @@ M.dump = function()
 
     bname = section.name
     -- Build command
-    cmd = elf.readelf()
+    cmd = opt:get_readelf()
     args = { "--wide", "--string-dump", section.name }
     if section.kind ~= "STRTAB" and section.name ~= ".debug_line_str" and section.name ~= ".debug_str" then
       args[#args + 1] = "--hex-dump"
@@ -158,13 +157,13 @@ M.dump = function()
 
     bname = "." .. symbol.name .. ".asm"
     -- Build command
-    cmd = elf.objdump()
-    -- "--start-address", symbol.start, "--stop-address", symbol.stop
-    args = { "--wide", "--demangle", "--disassemble=" .. symbol.name }
+    cmd = opt:get_objdump()
+    args = { "--wide", "--demangle", "--source" }
     if symbol.kind == "FUNC" then
-      args[#args + 1] = "--source"
+      args[#args + 1] = "--disassemble=" .. symbol.name
     else
-      args[#args + 1] = "--full-contents"
+      args[#args + 1] = "--start-address=" .. symbol.start
+      args[#args + 1] = "--stop-address=" .. symbol.stop
     end
     args[#args + 1] = vim.fn.expand("%")
   end
@@ -237,36 +236,11 @@ M.hover = function()
   end
 end
 
----Search for text in a bin file using strings
-M.search_text = function()
-  local util = require("nvim-elf-file.util")
-  local config = require("nvim-elf-file.config")
-  local strings = {}
-
-  local cmd = { config.strings, vim.fn.expand("%") }
-  util.log.info(table.concat(cmd, " "))
-  local text = vim.fn.system(cmd)
-  for line in text:gmatch("[^\r\n]+") do
-    table.insert(strings, line)
-  end
-  vim.ui.select(strings, {
-    prompt = "Strings:",
-  }, function(choice)
-    if choice then
-      local registers = config.yank_registers
-      for reg in registers do
-        vim.fn.setreg(reg, choice)
-      end
-      vim.notify('Yanked "' .. choice .. '" to registers ' .. table.concat(registers, ", "))
-    end
-  end)
-end
-
 ---Search for raw bytes in a bin file using rg
 M.search_binary = function()
   vim.ui.input({ prompt = "Search Hex: (0-9, a-f, A-F)", default = "" }, function(text)
     local bin = require("nvim-elf-file.bin")
-    local config = require("nvim-elf-file.config")
+    local opts = require("nvim-elf-file.config").options
     local util = require("nvim-elf-file.util")
     -- Clean up user input
     text = text or ""
@@ -286,7 +260,7 @@ M.search_binary = function()
     end
 
     local cmd = {
-      config.rg,
+      opts.rg,
       "--text",
       "--only-matching",
       "--byte-offset",
@@ -294,6 +268,7 @@ M.search_binary = function()
       vim.fn.expand("%"),
     }
 
+    util.log.info(table.concat(cmd, " "))
     vim.system(cmd, {}, function(out)
       if out.code ~= 0 then
         return
@@ -321,6 +296,81 @@ M.search_binary = function()
   end)
 end
 
+---Search for text in a bin file using rg
+M.search_text = function()
+  vim.ui.input({ prompt = "Search Text: ", default = "" }, function(text)
+    local bin = require("nvim-elf-file.bin")
+    local opts = require("nvim-elf-file.config").options
+    local util = require("nvim-elf-file.util")
+    if text == nil then
+      return
+    end
+    util.log.trace("Searching for " .. text)
+
+    local cmd = {
+      opts.rg,
+      "--text",
+      "--only-matching",
+      "--byte-offset",
+      text,
+      vim.fn.expand("%"),
+    }
+
+    util.log.info(table.concat(cmd, " "))
+    vim.system(cmd, {}, function(out)
+      if out.code ~= 0 then
+        return
+      end
+
+      local choices = {}
+      for addr in out.stdout:gmatch("%d+") do
+        choices[#choices + 1] = addr
+      end
+      if #choices > 0 then
+        vim.schedule(function()
+          vim.ui.select(choices, {
+            prompt = "Which occurrence?",
+            format_item = function(item)
+              return item .. " (0x" .. string.format("%x", tonumber(item)) .. ")"
+            end,
+          }, function(choice)
+            vim.api.nvim_win_set_cursor(0, bin.addr2pos(tonumber(choice)))
+          end)
+        end)
+      else
+        vim.notify("No occurrence of " .. text .. " found", vim.log.levels.ERROR)
+      end
+    end)
+  end)
+end
+
+---Select from text in a bin file using strings
+M.search_strings = function()
+  local util = require("nvim-elf-file.util")
+  local opts = require("nvim-elf-file.config").options
+  local strings = {}
+
+  local cmd = { opts.strings, vim.fn.expand("%") }
+  util.log.info(table.concat(cmd, " "))
+
+  local text = vim.fn.system(cmd)
+  for line in text:gmatch("[^\r\n]+") do
+    table.insert(strings, line)
+  end
+
+  vim.ui.select(strings, {
+    prompt = "Strings:",
+  }, function(choice)
+    if choice then
+      local registers = opts.yank_registers
+      for _, reg in ipairs(registers) do
+        print(reg)
+      end
+      vim.notify('Yanked "' .. choice .. '" to registers ' .. table.concat(registers, ", "))
+    end
+  end)
+end
+
 ---Redo toggle
 M.refresh = function()
   M.toggle()
@@ -336,19 +386,17 @@ M.COMMANDS = {
   ["dump"] = "Dump section/symbol/file under cursor",
   ["jump"] = "Jump to an address in a binary file",
   ["hover"] = "Show a hover with additional info",
-  ["search-text"] = "Search for text in a binary file",
   ["search-bin"] = "Search for raw bytes in a binary file",
+  ["search-text"] = "Search for text in a binary file",
+  ["search-strings"] = "Yank from the strings present in a binary file",
   ["refresh"] = "Reload toggle",
 }
 
----@type table[nvim-elf-file.BufHidden, string]
-M.BUF_HIDDEN = {
-  [""] = "",
-  ["hide"] = "",
-  ["unload"] = "",
-  ["delete"] = "",
-  ["wipe"] = "",
-}
+---@type nvim-elf-file.BufHidden[]
+M.BUF_HIDDEN = { "", "hide", "unload", "delete", "wipe" }
+
+---@type nvim-elf-file.Radix[]
+M.ADDR_FMT = { "hexadecimal", "decimal" }
 
 ---@type nvim-elf-file.LogLevel[]
 M.LOG_LEVELS = { "trace", "debug", "info", "warn", "error", "critical" }

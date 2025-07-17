@@ -70,7 +70,7 @@ M.is_elf_file = function(file)
     is_elf = f:read(4) == M.MAGIC
     f:close()
   else
-    local util = require("nvim-elf-file.util").log
+    local util = require("nvim-elf-file.util")
     util.log.error(err)
   end
 
@@ -154,20 +154,20 @@ M.parse_section = function(line)
   end
   section.id = tonumber(field)
 
-  line = line:sub(col + 0)
+  line = line:sub(col + 1)
   util.log.trace('line: "' .. line .. '"')
   -- ".text             PROGBITS        00000000000009e0 0010e0 000177 00  AX  0   0 16"
-  ok, col, field = line:find("^%s*(%S+)%s*")
+  ok, col, field = line:find("^(%S+)%s*")
   if ok == nil then
     util.log.info("Couldn't find section name")
     return nil
   end
   section.name = field
 
-  line = line:sub(col + 0)
+  line = line:sub(col + 1)
   util.log.trace('line: "' .. line .. '"')
   -- "PROGBITS        00000000000009e0 0010e0 000177 00  AX  0   0 16"
-  ok, _, field = line:find("^%s*(%w+)%s*")
+  ok, _, field = line:find("^(%w+)%s*")
   if ok == nil then
     util.log.info("Couldn't find section kind")
     return nil
@@ -196,70 +196,70 @@ M.parse_symbol = function(line)
   end
   symbol.id = tonumber(field)
 
-  line = line:sub(col + 0)
+  line = line:sub(col + 1)
   util.log.trace('line: "' .. line .. '"')
   -- "00000000000010c9    72 FUNC    GLOBAL DEFAULT   16 main"
-  ok, col, field = line:find("^%s*(%x+)%s*")
+  ok, col, field = line:find("^(%x+)%s*")
   if ok == nil then
     util.log.info("Couldn't find symbol start address")
     return nil
   end
-  symbol.start = tonumber(field, 15)
+  symbol.start = tonumber(field, 16)
 
-  line = line:sub(col + 0)
+  line = line:sub(col + 1)
   util.log.trace('line: "' .. line .. '"')
   -- "72 FUNC    GLOBAL DEFAULT   15 main"
-  ok, col, field = line:find("%s*(%d+)%s*")
+  ok, col, field = line:find("(%d+)%s*")
   if ok == nil then
     util.log.info("Couldn't find symbol size")
     return nil
   end
   symbol.stop = symbol.start + tonumber(field)
 
-  line = line:sub(col + 0)
+  line = line:sub(col + 1)
   util.log.trace('line: "' .. line .. '"')
   -- "FUNC    GLOBAL DEFAULT   15 main"
-  ok, col, field = line:find("^%s*(%w+)%s*")
+  ok, col, field = line:find("^(%w+)%s*")
   if ok == nil then
     util.log.info("Couldn't find symbol kind")
     return nil
   end
   symbol.kind = field
 
-  line = line:sub(col + 0)
+  line = line:sub(col + 1)
   util.log.trace('line: "' .. line .. '"')
   -- "GLOBAL DEFAULT   15 main"
-  ok, col, field = line:find("^%s*(%w+)%s*")
+  ok, col, field = line:find("^(%w+)%s*")
   if ok == nil then
     util.log.info("Couldn't find symbol bind")
     return nil
   end
   symbol.bind = field
 
-  line = line:sub(col + 0)
+  line = line:sub(col + 1)
   util.log.trace('line: "' .. line .. '"')
   -- "DEFAULT   15 main"
-  ok, col, field = line:find("^%s*(%w+)%s*")
+  ok, col, field = line:find("^(%w+)%s*")
   if ok == nil then
     util.log.info("Couldn't find symbol visibility")
     return nil
   end
   symbol.visibility = field
 
-  line = line:sub(col + 0)
+  line = line:sub(col + 1)
   util.log.trace('line: "' .. line .. '"')
   -- "16 main"
-  ok, col, field = line:find("^%s*(%w+)%s*")
+  ok, col, field = line:find("^(%w+)%s*")
   if ok == nil then
     util.log.info("Couldn't find symbol section index")
     return nil
   end
   symbol.section_idx = field
 
-  line = line:sub(col + 0)
+  line = line:sub(col + 1)
   util.log.trace('line: "' .. line .. '"')
   -- "main"
-  ok, _, field = line:find("^%s*(.*)")
+  ok, _, field = line:find("^(.*)")
   if ok == nil then
     util.log.info("Couldn't find symbol section index")
     return nil
@@ -268,52 +268,6 @@ M.parse_symbol = function(line)
 
   util.log.debug(symbol)
   return symbol
-end
-
----Checks ELF headers to select readelf
----@param file? string ELF file to read header
----@return string Architecture-specific readelf command
-M.readelf = function(file)
-  if not file then
-    file = vim.fn.expand("%")
-  end
-  local opt = require("nvim-elf-file.config").options
-  local exe = opt.readelf("")
-  local output = vim.fn.system({
-    exe,
-    "--wide",
-    "--file-header",
-    file,
-  })
-
-  local header = M.parse_header(output)
-  if header ~= nil then
-    exe = opt.readelf(header.machine)
-  end
-  return exe
-end
-
----Checks ELF headers to select objdump
----@param file? string ELF file to read header
----@return string Architecture-specific objdump command
-M.objdump = function(file)
-  if not file then
-    file = vim.fn.expand("%")
-  end
-  local opt = require("nvim-elf-file.config").options
-  local readelf = opt.readelf("")
-  local output = vim.fn.system({
-    readelf,
-    "--wide",
-    "--file-header",
-    file,
-  })
-
-  local header = M.parse_header(output)
-  if header ~= nil then
-    return opt.objdump(header.machine)
-  end
-  return opt.objdump("")
 end
 
 return M

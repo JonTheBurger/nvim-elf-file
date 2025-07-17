@@ -75,8 +75,7 @@ locally. Use `make docker.run` to diagnose environment leaks.
 
 Planned work items are listed here:
 
-- fix config & readme update
-- gifs in docs
+- Goto next occurrence of ripgrep search
 
 --------------------------------------------------------------------------------
 

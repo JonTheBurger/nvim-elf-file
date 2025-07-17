@@ -9,8 +9,8 @@ M.defaults = {
   -- readelf = "/usr/bin/readelf",
 
   -- Or a function that picks readelf based on machine (see table below)
-  -- An empty string should return a default implementation
-  ---@param machine string
+  -- nil should return a default implementation
+  ---@param machine? string
   readelf = function(machine)
     if machine == "ARM" then
       return "arm-none-eabi-readelf"
@@ -19,13 +19,19 @@ M.defaults = {
   end,
 
   -- Same thing as readelf, but for objdump
-  ---@param machine string
+  ---@param machine? string
   objdump = function(machine)
     if machine == "ARM" then
       return "arm-none-eabi-objdump"
     end
     return "objdump"
   end,
+
+  -- Name of strings command
+  strings = "strings",
+
+  -- Name of ripgrep command
+  rg = "rg",
 
   -- Name of binary dumping program (not machine-dependent)
   xxd = {
@@ -43,12 +49,6 @@ M.defaults = {
     uppercase = false,
   },
 
-  -- Name of strings command
-  strings = "strings",
-
-  -- Name of ripgrep command
-  rg = "rg",
-
   -- nvim-elf-file buffer-specific keymaps.
   -- Each entry is a <Plug>(nvim-elf-file-<command>)
   -- See list of commands in "Usage" below
@@ -59,9 +59,8 @@ M.defaults = {
     ["sj"] = "jump",
     ["sb"] = "search-bin",
     ["st"] = "search-text",
+    ["ss"] = "search-strings",
     ["<F1>"] = "hover",
-    ["<F2>"] = "search-text",
-    ["<F3>"] = "search-bin",
     ["<F4>"] = "jump",
     ["<F5>"] = "refresh",
     ["<F12>"] = "dump",
@@ -71,6 +70,8 @@ M.defaults = {
   automatic = {
     elf = true,
     bin = true,
+    -- Automatically refresh the render when window size changes
+    refresh = false,
   },
 
   -- List of registers to yank strings to
@@ -81,7 +82,7 @@ M.defaults = {
   bufhidden = "wipe",
 
   -- Verbosity of `vim.fn.stdpath("data") .. "/nvim-elf-file.log"`
-  log_level = "trace",
+  log_level = "info",
 }
 tbl.freeze(M.defaults)
 
@@ -103,16 +104,6 @@ function Options:new(opts)
   local options = vim.deepcopy(merged, true)
 
   options.user = merged
-  if type(merged.readelf) == "string" then
-    options.readelf = function(_)
-      return merged.readelf
-    end
-  end
-  if type(merged.objdump) == "string" then
-    options.objdump = function(_)
-      return merged.objdump
-    end
-  end
 
   setmetatable(options, self)
   return options
@@ -123,7 +114,7 @@ function Options:apply()
   local util = require("nvim-elf-file.util")
   util.log.level = self.log_level
 
-  if self.refresh then
+  if self.automatic.refresh then
     vim.api.nvim_create_augroup("nvim-elf-file", { clear = true })
     vim.api.nvim_create_autocmd({ "WinResized" }, {
       group = "nvim-elf-file",
@@ -134,6 +125,61 @@ function Options:apply()
       end,
     })
   end
+end
+
+---Checks ELF headers to select readelf
+---@param file? string ELF file to read header
+---@return string Architecture-specific readelf command
+function Options:get_readelf(file)
+  if type(self.readelf) == "string" then
+    ---@diagnostic disable-next-line: return-type-mismatch
+    return self.readelf
+  end
+
+  if not file then
+    file = vim.fn.expand("%")
+  end
+
+  local exe = self.readelf()
+  local output = vim.fn.system({
+    exe,
+    "--wide",
+    "--file-header",
+    file,
+  })
+
+  local header = require("nvim-elf-file.elf").parse_header(output)
+  if header ~= nil then
+    exe = self.readelf(header.machine)
+  end
+  return exe
+end
+
+---Checks ELF headers to select objdump
+---@param file? string ELF file to read header
+---@return string Architecture-specific objdump command
+function Options:get_objdump(file)
+  if type(self.objdump) == "string" then
+    ---@diagnostic disable-next-line: return-type-mismatch
+    return self.objdump
+  end
+
+  if not file then
+    file = vim.fn.expand("%")
+  end
+  local readelf = self.readelf()
+  local output = vim.fn.system({
+    readelf,
+    "--wide",
+    "--file-header",
+    file,
+  })
+
+  local header = require("nvim-elf-file.elf").parse_header(output)
+  if header ~= nil then
+    return self.objdump(header.machine)
+  end
+  return self.objdump()
 end
 
 ---@type nvim-elf-file.Options
@@ -164,6 +210,16 @@ M.validate = function(opts)
   local is_executable = function(exe)
     return type(exe) == "string" and vim.fn.executable(exe) == 1
   end
+  local is_in = function(list)
+    return function(k)
+      return iter.iter(list):any(function(e)
+        return e == k
+      end)
+    end
+  end
+  local list2str = function(list)
+    return '"' .. table.concat(list, '"|"') .. '"'
+  end
 
   local ok, err = pcall(function()
     if type(opts.readelf) == "string" then
@@ -178,8 +234,27 @@ M.validate = function(opts)
       vim.validate("objdump()", opts.objdump(""), is_executable, "executable default objdump")
     end
 
-    -- TODO: Update
-    -- vim.validate("xxd", opts.xxd, is_executable, "executable xxd")
+    vim.validate("strings", opts.strings, is_executable, "executable strings")
+    vim.validate("rg", opts.rg, is_executable, "executable rg")
+
+    vim.validate("xxd", opts.xxd, "table")
+    vim.validate("xxd.executable", opts.xxd.executable, is_executable, "executable xxd")
+    ---@diagnostic disable-next-line: param-type-mismatch
+    vim.validate("xxd.bytes_per_column", opts.xxd.bytes_per_column, "number", function(v)
+      return v > 0 and math.floor(v) == v
+    end, "positive integer")
+    vim.validate("xxd.bytes_per_line", opts.xxd.bytes_per_line, function(v)
+      if type(v) == "number" then
+        return (v > 0 and math.floor(v) == v)
+      elseif type(v) == "string" then
+        return (v == "auto")
+      else
+        return false
+      end
+    end, "positive integer or 'auto'")
+    vim.validate("xxd.address_format", opts.xxd.address_format, is_in(api.ADDR_FMT), list2str(api.ADDR_FMT))
+    vim.validate("xxd.skip_zeros", opts.xxd.skip_zeros, "boolean")
+    vim.validate("xxd.uppercase", opts.xxd.uppercase, "boolean")
 
     vim.validate("keymaps", opts.keymaps, "table")
     for key, value in pairs(opts.keymaps) do
@@ -196,15 +271,8 @@ M.validate = function(opts)
       vim.validate('automatic["' .. tostring(key) .. '"] = ' .. tostring(value), value, "boolean")
     end
 
-    vim.validate("bufhidden", opts.bufhidden, function(k)
-      return api.BUF_HIDDEN[k] ~= nil
-    end, '"' .. table.concat(iter.iter(api.BUF_HIDDEN):tolist(), '"|"') .. '"')
-
-    vim.validate("log_level", opts.log_level, function(k)
-      return iter.iter(api.LOG_LEVELS):any(function(e)
-        return e == k
-      end)
-    end, '"' .. table.concat(api.LOG_LEVELS, '"|"') .. '"')
+    vim.validate("bufhidden", opts.bufhidden, is_in(api.BUF_HIDDEN), list2str(api.BUF_HIDDEN))
+    vim.validate("log_level", opts.log_level, is_in(api.LOG_LEVELS), list2str(api.LOG_LEVELS))
   end)
   return ok, err
 end

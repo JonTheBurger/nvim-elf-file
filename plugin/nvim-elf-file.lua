@@ -45,6 +45,8 @@ if not vim.g.loaded_nvim_elf_file then
         api.search_binary()
       elseif search == "text" then
         api.search_text()
+      elseif search == "strings" then
+        api.search_strings()
       end
     elseif sub == "help" then
       api.help()
@@ -63,7 +65,7 @@ if not vim.g.loaded_nvim_elf_file then
       if line:find("^ElfFile%s+toggle") then
         return { "bin", "elf" }
       elseif line:find("^ElfFile%s+search") then
-        return { "bin", "text" }
+        return { "bin", "text", "strings" }
       end
       return { "toggle", "dump", "jump", "hover", "search", "help", "refresh" }
     end,
@@ -90,12 +92,15 @@ if not vim.g.loaded_nvim_elf_file then
   vim.keymap.set("n", "<Plug>(nvim-elf-file-hover)", function()
     require("nvim-elf-file").hover()
   end, { noremap = true, desc = api.COMMANDS["hover"] })
-  vim.keymap.set("n", "<Plug>(nvim-elf-file-search-text)", function()
-    require("nvim-elf-file").search_text()
-  end, { noremap = true, desc = api.COMMANDS["search-text"] })
   vim.keymap.set("n", "<Plug>(nvim-elf-file-search-bin)", function()
     require("nvim-elf-file").search_binary()
   end, { noremap = true, desc = api.COMMANDS["search-bin"] })
+  vim.keymap.set("n", "<Plug>(nvim-elf-file-search-text)", function()
+    require("nvim-elf-file").search_text()
+  end, { noremap = true, desc = api.COMMANDS["search-text"] })
+  vim.keymap.set("n", "<Plug>(nvim-elf-file-search-strings)", function()
+    require("nvim-elf-file").search_strings()
+  end, { noremap = true, desc = api.COMMANDS["search-strings"] })
   vim.keymap.set("n", "<Plug>(nvim-elf-file-refresh)", function()
     require("nvim-elf-file").refresh()
   end, { noremap = true, desc = api.COMMANDS["refresh"] })

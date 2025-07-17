@@ -36,8 +36,8 @@ describe("nvim-elf-file.config", function()
       local options = config.options
 
       assert(not err, err)
-      assert(options.readelf("") == "readelf", "Didn't return hard-coded readelf")
-      assert(options.readelf("ARM") == "readelf", "Didn't return hard-coded readelf")
+      assert(options:get_readelf() == "readelf", "Didn't return hard-coded readelf")
+      assert(options:get_readelf("ARM") == "readelf", "Didn't return hard-coded readelf")
     end)
 
     it("converts objdump string to function", function()
@@ -50,8 +50,8 @@ describe("nvim-elf-file.config", function()
       local options = config.options
 
       assert(not err, err)
-      assert(options.objdump("") == "objdump", "Didn't return hard-coded objdump")
-      assert(options.objdump("ARM") == "objdump", "Didn't return hard-coded objdump")
+      assert(options:get_objdump() == "objdump", "Didn't return hard-coded objdump")
+      assert(options:get_objdump("ARM") == "objdump", "Didn't return hard-coded objdump")
     end)
   end)
 
@@ -80,10 +80,36 @@ describe("nvim-elf-file.config", function()
       assert(not ok and err ~= nil and err:find("executable default objdump"), err)
     end)
 
+    it("checks strings is executable", function()
+      ---@type nvim-elf-file.UserOptions
+      local opts = {
+        strings = "dummy-strings",
+      }
+      opts = vim.tbl_deep_extend("force", {}, config.defaults, opts)
+
+      local ok, err = config.validate(opts)
+
+      assert(not ok and err ~= nil and err:find("executable strings"), err)
+    end)
+
+    it("checks rg is executable", function()
+      ---@type nvim-elf-file.UserOptions
+      local opts = {
+        rg = "dummy-rg",
+      }
+      opts = vim.tbl_deep_extend("force", {}, config.defaults, opts)
+
+      local ok, err = config.validate(opts)
+
+      assert(not ok and err ~= nil and err:find("executable rg"), err)
+    end)
+
     it("checks xxd is executable", function()
       ---@type nvim-elf-file.UserOptions
       local opts = {
-        xxd = "dummy-xxd",
+        xxd = {
+          executable = "dummy-xxd",
+        },
       }
       opts = vim.tbl_deep_extend("force", {}, config.defaults, opts)
 
